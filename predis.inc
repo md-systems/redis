@@ -85,7 +85,9 @@ class RedisPredisCache implements DrupalCacheInterface {
 
     $cached          = new stdClass;
     $cached->data    = $client->get($key . ':data');
-    $cached->expires = 0; // FIXME
+    $cached->expires = 0; // FIXME: Redis does not seem to allow us to fetch
+                          // expire value. The only solution would be to create
+                          // a new key. Who on earth need this value anyway?
 
     if ($serialized) {
       $cached->data  = unserialize($cached->data);
@@ -95,28 +97,41 @@ class RedisPredisCache implements DrupalCacheInterface {
   }
 
   function getMultiple(&$cids) {
-    // FIXME: GROS TODO ICI.
+    $client = self::$_client;
+
     $ret = $keys = $exclude = array();
 
     foreach ($cids as $cid) {
-      $keys[$cid] = $this->_buildKey($cid);
+      $key       = $this->_buildKey($cid);
+      $keys[]    = $key . ':data';
+      $keys[]    = $key . ':serialized';
     }
 
-    $result  = self::$_client->mget($keys);
+    $result = $client->mget($keys);
 
-    // FIXME: Waiting for it to happen.
-    print_r($result);die("Not implemented");
+    $index = 0;
+    foreach ($cids as $cid) {
+      $serialized = $result[$index + 1];
 
-    foreach ($keys as $cid => $key) {
-      if (isset($result[$key])) {
-        $ret[$cid] = $key;
-      }
-      else {
+      if (!$serialized) {
         $exclude[$cid] = TRUE;
+
+        continue;
       }
+
+      $cached          = new stdClass;
+      $cached->data    = $result[$index];
+      $cached->expires = 0; // FIXME: See comment in get() method.
+  
+      if ($serialized) {
+        $cached->data  = unserialize($cached->data);
+      }
+
+      $ret[$cid] = $cached;
+      $index += 2;
     }
 
-    // WTF Drupal, we need to remove entries from &$cids.
+    // WTF Drupal, we need to manually remove entries from &$cids.
     foreach ($cids as $index => $cid) {
       if (isset($exclude[$cid])) {
         unset($cids[$index]);

@@ -4,7 +4,7 @@
  * @file
  * Redis cache backend using Predis PHP library as Redis client.
  * 
- * Please read README.txt
+ * Please read README.Predis.txt
  */
 
 // Define Predis base path if not already set, and if we need to set the
@@ -48,8 +48,8 @@ class RedisPredisCache implements DrupalCacheInterface {
 
     global $conf;
 
-    if (isset($conf['predis_cache_uri'])) {
-      self::$_client = new Predis\Client($conf['predis_cache_uri']);
+    if (isset($conf['redis_cache_uri'])) {
+      self::$_client = new Predis\Client($conf['redis_cache_uri']);
     }
     else {
       // No parameters given, attempt a connection on localhost.

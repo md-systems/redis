@@ -162,8 +162,8 @@ class RedisPredisCache implements DrupalCacheInterface {
     $client = self::$_client;
     $many   = FALSE;
 
+    // Redis handles for us cache key expiration.
     if (!isset($cid)) {
-      // Redis handles for us cache key expiration.
       return;
     }
 
@@ -182,10 +182,16 @@ class RedisPredisCache implements DrupalCacheInterface {
     if ($many) {
       $keys = $client->keys($key);
 
-      $client->del($keys);
+      // Attempt to clear an empty array will raise exceptions.
+      if (!empty($keys)) {
+        $client->del($keys);
+      }
     }
     else {
-      $client->del($key);
+      $client->del(array(
+        $key . ':data',
+        $key . ':serialized',
+      ));
     }
   }
 

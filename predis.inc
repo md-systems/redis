@@ -45,7 +45,9 @@ class RedisPredisCache implements DrupalCacheInterface {
     if (isset(self::$_client)) {
       return;
     }
+
     global $conf;
+
     if (isset($conf['predis_cache_uri'])) {
       self::$_client = new Predis\Client($conf['predis_cache_uri']);
     }
@@ -158,6 +160,7 @@ class RedisPredisCache implements DrupalCacheInterface {
 
   function clear($cid = NULL, $wildcard = FALSE) {
     $client = self::$_client;
+    $many   = FALSE;
 
     if (!isset($cid)) {
       // Redis handles for us cache key expiration.
@@ -165,14 +168,25 @@ class RedisPredisCache implements DrupalCacheInterface {
     }
 
     if ('*' !== $cid && $wildcard) {
-      $key = $this->_buildKey('*' . $cid . '*');
+      $key  = $this->_buildKey('*' . $cid . '*');
+      $many = TRUE;
+    }
+    else if ('*' === $cid) {
+      $key  = $this->_buildKey($cid);
+      $many = TRUE;
     }
     else {
-      // If $cid is '*', then the built key will match the full bin.
       $key = $this->_buildKey($cid);
     }
 
-    $client->del($key);
+    if ($many) {
+      $keys = $client->keys($key);
+
+      $client->del($keys);
+    }
+    else {
+      $client->del($key);
+    }
   }
 
   function isEmpty() {

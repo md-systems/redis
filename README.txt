@@ -1,82 +1,27 @@
-Redis cache backend
-===================
+Redis cache backends
+====================
 
-This client, for now, is only able to use the Predis PHP library.
+This package provides two different Redis cache backends. If you want to use
+Redis as cache backend, you have to choose one of the two, but you cannot use
+both at the same time. Well, it will be technically possible, but it would be
+quite a dumb thing to do.
 
-The Predis library requires PHP 5.3 minimum. If your hosted environment does
-not ships with at least PHP 5.3, please do not use this cache backend.
+Predis
+------
 
-This code is ALPHA code. This means: DO NOT USE IT IN PRODUCTION. Not until
-I don't ship any BETA release as a full Drupal.org module.
+This implementation uses the Predis PHP library. It is compatible PHP 5.3
+only.
 
-Please consider using an OPCode cache such as APC. Predis is a good and fully
-featured API, the cost is that the code is a lot more than a single file in
-opposition to some other backends such as the APC one.
+PhpRedis
+--------
 
-Any suggestions are welcome. If you have more time than me and you want to
-maintain this code, I'd please to give it to you.
-Future planned is to provide more than one cache backend, one per fun Redis
-PHP client I could find out there.
+This implementation uses the PhpRedis PHP extention. In order to use it, you
+will need to compile the extension yourself.
 
-Get Predis
-----------
+Notes
+-----
 
-You can download this library at:
-  https://github.com/nrk/predis
+Both backends provide the exact same functionnalities. The major difference is
+because PhpRedis uses a PHP extension, and not PHP code, it more performant.
 
-This file explains how to install the Predis library and the Drupal cache
-backend. If you are an advanced Drupal integrator, please consider the fact
-that you can easily change all the pathes. Pathes used in this file are
-likely to be default for non advanced users.
-
-Configuration (no sharing)
---------------------------
-
-Once done, you either have to clone it into:
-  modules/predis/predis
-
-So that you have the following directory tree:
-  sites/all/modules/redis_cache/predis.inc
-  sites/all/modules/redis_cache/predis/lib/Predis # Where the PHP code stands
-
-Configuration (sharing)
------------------------
-
-Or, any other place in order to share it:
-For example, into your libraries folder, in order to get:
-  sites/all/libraries/predis/lib
-
-If you choose this solution, you have to alter a bit your $conf array into
-the settings.php file as this:
-  define('PREDIS_BASE_PATH', DRUPAL_ROOT . '/sites/all/libraries/predis/lib/');
-
-Tell Drupal to use it
----------------------
-
-Usual cache backend configuration, as follows, to add into your settings.php
-file like any other backend:
-  $conf['cache_backends'][]            = 'sites/all/modules/redis_cache/predis.inc';
-  $conf['cache_class_cache']           = 'RedisPredisCache';
-  $conf['cache_class_cache_menu']      = 'RedisPredisCache';
-  $conf['cache_class_cache_bootstrap'] = 'RedisPredisCache';
-  // ... Any other bins.
-
-Additionnaly, if your Redis server is remote, you can add the remote connection
-string this way (local instance doesn't need connection string, Predis will
-attempt a connection on localhost per default):
-  $conf['predis_cache_uri'] = 'http://1.2.3.4:1234';
-
-Or this way:
-  $conf['predis_cache_uri'] = array(
-    'scheme' => 'http',
-    'host'   => '1.2.3.4',
-    'port'   => 1234',
-  );
-
-That's it, refresh your Drupal frontpage and pray.
-
-Advanced configuration (PHP expert)
------------------------------------
-
-Best solution is, whatever is the place where you put the Predis library, that
-you set up a fully working autoloader able to use it.
+Difference is not that visible, it's really a few millisec on my testing box.

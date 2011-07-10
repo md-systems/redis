@@ -131,8 +131,8 @@ class RedisPredisCache implements DrupalCacheInterface {
     $client->pipeline(function($pipe) use ($key, $data, $expire) {
 
       if (isset($data) && !is_scalar($data)) {
-        $data = serialize($data);
         $serialize = TRUE;
+        $data      = serialize($data);
       }
       else {
         $serialize = FALSE;
@@ -157,9 +157,22 @@ class RedisPredisCache implements DrupalCacheInterface {
   }
 
   function clear($cid = NULL, $wildcard = FALSE) {
-    // FIXME: WRONG!
     $client = self::$_client;
-    $client->flushdb();
+
+    if (!isset($cid)) {
+      // Redis handles for us cache key expiration.
+      return;
+    }
+
+    if ('*' !== $cid && $wildcard) {
+      $key = $this->_buildKey('*' . $cid . '*');
+    }
+    else {
+      // If $cid is '*', then the built key will match the full bin.
+      $key = $this->_buildKey($cid);
+    }
+
+    $client->del($key);
   }
 
   function isEmpty() {

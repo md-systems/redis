@@ -31,8 +31,8 @@ Once done, you either have to clone it into:
   modules/predis/predis
 
 So that you have the following directory tree:
-  sites/all/modules/redis_cache/predis.inc
-  sites/all/modules/redis_cache/predis/lib/Predis # Where the PHP code stands
+  sites/all/modules/redis/predis.inc
+  sites/all/modules/redis/predis/lib/Predis # Where the PHP code stands
 
 Configuration (sharing)
 -----------------------
@@ -50,7 +50,7 @@ Tell Drupal to use it
 
 Usual cache backend configuration, as follows, to add into your settings.php
 file like any other backend:
-  $conf['cache_backends'][]            = 'sites/all/modules/redis_cache/predis.inc';
+  $conf['cache_backends'][]            = 'sites/all/modules/redis/predis.inc';
   $conf['cache_class_cache']           = 'RedisPredisCache';
   $conf['cache_class_cache_menu']      = 'RedisPredisCache';
   $conf['cache_class_cache_bootstrap'] = 'RedisPredisCache';

@@ -20,7 +20,7 @@ Tell Drupal to use it
 
 Usual cache backend configuration, as follows, to add into your settings.php
 file like any other backend:
-  $conf['cache_backends'][]            = 'sites/all/modules/redis_cache/phpredis.inc';
+  $conf['cache_backends'][]            = 'sites/all/modules/redis/phpredis.inc';
   $conf['cache_class_cache']           = 'RedisPhpRedisCache';
   $conf['cache_class_cache_menu']      = 'RedisPhpRedisCache';
   $conf['cache_class_cache_bootstrap'] = 'RedisPhpRedisCache';

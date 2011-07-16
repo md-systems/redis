@@ -23,9 +23,9 @@ Usual cache backend configuration, as follows, to add into your settings.php
 file like any other backend:
 
   $conf['cache_backends'][]            = 'sites/all/modules/redis/phpredis.cache..inc';
-  $conf['cache_class_cache']           = 'RedisPhpRedisCache';
-  $conf['cache_class_cache_menu']      = 'RedisPhpRedisCache';
-  $conf['cache_class_cache_bootstrap'] = 'RedisPhpRedisCache';
+  $conf['cache_class_cache']           = 'Redis_Cache_PhpRedis';
+  $conf['cache_class_cache_menu']      = 'Redis_Cache_PhpRedis';
+  $conf['cache_class_cache_bootstrap'] = 'Redis_Cache_PhpRedis';
   // ... Any other bins.
 
 Default behavior is to connect via tcp://localhost:6379 but you might want to

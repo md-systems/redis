@@ -52,9 +52,9 @@ Usual cache backend configuration, as follows, to add into your settings.php
 file like any other backend:
 
   $conf['cache_backends'][]            = 'sites/all/modules/redis/predis.cache.inc';
-  $conf['cache_class_cache']           = 'RedisPredisCache';
-  $conf['cache_class_cache_menu']      = 'RedisPredisCache';
-  $conf['cache_class_cache_bootstrap'] = 'RedisPredisCache';
+  $conf['cache_class_cache']           = 'Redis_Cache_Predis';
+  $conf['cache_class_cache_menu']      = 'Redis_Cache_Predis';
+  $conf['cache_class_cache_bootstrap'] = 'Redis_Cache_Predis';
   // ... Any other bins.
 
 Tell Drupal to use the lock backend

@@ -43,8 +43,8 @@ Connect to a remote host
 
 If your Redis instance is remote, you can use this syntax:
 
-  $conf['redis_cache_host'] = '1.2.3.4';
-  $conf['redis_cache_port'] = 1234;
+  $conf['redis_client_host'] = '1.2.3.4';
+  $conf['redis_client_port'] = 1234;
 
 Port is optional, default used is 6379 (default Redis port).
 
@@ -57,7 +57,7 @@ this one if nothing is specified.
 Depending on you OS or OS distribution, you might have numerous database. To
 use one in particular, just add to your settings.php file:
 
-  $conf['redis_cache_base'] = 12;
+  $conf['redis_client_base'] = 12;
 
 Lock backends
 -------------

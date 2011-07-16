@@ -3,6 +3,7 @@ description = "Provide a module placeholder, for using as dependency for module 
 package = Performance
 version = VERSION
 core = 7.x
+configure = admin/config/development/performance/redis
 files[] = lib/Redis/Cache/PhpRedis.php
 files[] = lib/Redis/Cache/Predis.php
 files[] = lib/Redis/Client/Interface.php

@@ -174,6 +174,7 @@ function lock_release_all($lock_id = NULL) {
   }
 
   $client  = Redis_Client::getClient();
+  $id      = _lock_id();
 
   // We can afford to deal with a slow algorithm here, this should not happen
   // on normal run because we should have removed manually all our locks.

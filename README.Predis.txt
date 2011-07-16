@@ -25,32 +25,28 @@ backend. If you are an advanced Drupal integrator, please consider the fact
 that you can easily change all the pathes. Pathes used in this file are
 likely to be default for non advanced users.
 
-Configuration (no sharing)
---------------------------
+Download and install library
+----------------------------
 
 Once done, you either have to clone it into:
-  modules/predis/predis
+  sites/all/libraries/predis
 
 So that you have the following directory tree:
 
-  sites/all/modules/redis/predis.inc
-  sites/all/modules/redis/predis/lib/Predis # Where the PHP code stands
-
-Configuration (sharing)
------------------------
+  sites/all/libraries/lib/Predis # Where the PHP code stands
 
 Or, any other place in order to share it:
 For example, into your libraries folder, in order to get:
 
-  sites/all/libraries/predis/lib
+  some/dir/predis/lib
 
 If you choose this solution, you have to alter a bit your $conf array into
 the settings.php file as this:
 
-  define('PREDIS_BASE_PATH', DRUPAL_ROOT . '/sites/all/libraries/predis/lib/');
+  define('PREDIS_BASE_PATH', DRUPAL_ROOT . '/some/dir/predis/lib/');
 
-Tell Drupal to use it
----------------------
+Tell Drupal to use the cache backend
+------------------------------------
 
 Usual cache backend configuration, as follows, to add into your settings.php
 file like any other backend:
@@ -60,6 +56,13 @@ file like any other backend:
   $conf['cache_class_cache_menu']      = 'RedisPredisCache';
   $conf['cache_class_cache_bootstrap'] = 'RedisPredisCache';
   // ... Any other bins.
+
+Tell Drupal to use the lock backend
+-----------------------------------
+
+Usual lock backend override, update you settings.php file as this:
+
+  $conf['lock_inc'] = 'sites/all/modules/custom/redis/predis.lock.inc';
 
 Connect to a remote host and database
 -------------------------------------

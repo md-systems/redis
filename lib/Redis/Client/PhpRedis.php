@@ -1,16 +1,9 @@
 <?php
 
 /**
- * @file
- * PhpRedis client handling.
+ * PhpRedis client specific implementation.
  */
-
-require_once dirname(__FILE__) . '/redis.common.inc';
-
-/**
- * Specific implementation.
- */
-class Redis_Client_Proxy_PhpRedis implements Redis_Client_Proxy_Interface {
+class Redis_Client_PhpRedis implements Redis_Client_Interface {
 
   public function getClient($host = NULL, $port = NULL, $base = NULL) {
     $client = new Redis;
@@ -32,6 +25,3 @@ class Redis_Client_Proxy_PhpRedis implements Redis_Client_Proxy_Interface {
     return 'PhpRedis';
   }
 }
-
-// Register client proxy.
-Redis_Client::setClient(new Redis_Client_Proxy_PhpRedis);

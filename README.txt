@@ -58,3 +58,13 @@ Depending on you OS or OS distribution, you might have numerous database. To
 use one in particular, just add to your settings.php file:
 
   $conf['redis_cache_base'] = 12;
+
+Lock backends
+-------------
+
+Both implementations provides a Redis lock backend. Lock backend, being used
+with MySQL and Redis on the same backend is faster than default one, whatever
+implementation you are using.
+
+Both backends, thanks to the Redis WATCH, MULTI and EXEC commands provides a
+real race condition free mutexes if you use Redis >= 2.1.0.

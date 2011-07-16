@@ -3,13 +3,20 @@
 /**
  * @file
  * Drupal core lock.inc implementation using Redis via PhpRedis extension.
- * 
- * FIXME: This implementation is not perfect, it could have potential race
- * conditions at some point, when dealing with the owner flag. Need to find
- * elegant but fast solutions.
  */
 
-require_once dirname(__FILE__) . '/phpredis.client.inc';
+// No autoloader is here during early bootstrap phases.
+if (!class_exists('Redis_Client_PhpRedis')) {
+  $local_redis_path = dirname(__FILE__) . '/lib/Redis';
+  require_once $local_redis_path . '/Client/Interface.php';
+  require_once $local_redis_path . '/Client.php';
+  require_once $local_redis_path . '/Client/PhpRedis.php';
+}
+
+// Register our specific client.
+if (!Redis_Client::hasClient()) {
+  Redis_Client::setClient(new Redis_Client_PhpRedis);
+}
 
 function lock_initialize() {
   global $locks;

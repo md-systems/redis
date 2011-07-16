@@ -1,0 +1,9 @@
+<?php
+
+/**
+ * @file
+ * Redis module.
+ * 
+ * This file is a placeholder for other modules that need the Redis client for
+ * something else than lock and cache.
+ */

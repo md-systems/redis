@@ -2,7 +2,8 @@
 
 /**
  * @file
- * Redis cache backend using PhpRedis PHP extension as Redis client.
+ * Placeholder file for using the PhpRedis cache backend. This file will also
+ * ensure the client handling API is fully loaded for lock backend.
  */
 
 // No autoloader is here during early bootstrap phases.

@@ -2,7 +2,8 @@
 
 /**
  * @file
- * Redis cache backend using Predis PHP library as Redis client.
+ * Placeholder file for using the Predis cache backend. This file will also
+ * ensure the client handling API is fully loaded for lock backend.
  */
 
 // No autoloader is here during early bootstrap phases.

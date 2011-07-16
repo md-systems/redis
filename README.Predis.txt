@@ -17,6 +17,7 @@ Get Predis
 ----------
 
 You can download this library at:
+
   https://github.com/nrk/predis
 
 This file explains how to install the Predis library and the Drupal cache
@@ -31,6 +32,7 @@ Once done, you either have to clone it into:
   modules/predis/predis
 
 So that you have the following directory tree:
+
   sites/all/modules/redis/predis.inc
   sites/all/modules/redis/predis/lib/Predis # Where the PHP code stands
 
@@ -39,10 +41,12 @@ Configuration (sharing)
 
 Or, any other place in order to share it:
 For example, into your libraries folder, in order to get:
+
   sites/all/libraries/predis/lib
 
 If you choose this solution, you have to alter a bit your $conf array into
 the settings.php file as this:
+
   define('PREDIS_BASE_PATH', DRUPAL_ROOT . '/sites/all/libraries/predis/lib/');
 
 Tell Drupal to use it
@@ -50,25 +54,17 @@ Tell Drupal to use it
 
 Usual cache backend configuration, as follows, to add into your settings.php
 file like any other backend:
-  $conf['cache_backends'][]            = 'sites/all/modules/redis/predis.inc';
+
+  $conf['cache_backends'][]            = 'sites/all/modules/redis/predis.cache.inc';
   $conf['cache_class_cache']           = 'RedisPredisCache';
   $conf['cache_class_cache_menu']      = 'RedisPredisCache';
   $conf['cache_class_cache_bootstrap'] = 'RedisPredisCache';
   // ... Any other bins.
 
-Additionnaly, if your Redis server is remote, you can add the remote connection
-string this way (local instance doesn't need connection string, Predis will
-attempt a connection on localhost per default):
-  $conf['redis_cache_uri'] = 'tcp://1.2.3.4:1234';
+Connect to a remote host and database
+-------------------------------------
 
-Or this way:
-  $conf['redis_cache_uri'] = array(
-    'scheme' => 'tcp',
-    'host'   => '1.2.3.4',
-    'port'   => 1234',
-  );
-
-That's it, refresh your Drupal frontpage and pray.
+See README.txt file.
 
 Advanced configuration (PHP expert)
 -----------------------------------

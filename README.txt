@@ -18,6 +18,16 @@ PhpRedis
 This implementation uses the PhpRedis PHP extention. In order to use it, you
 will need to compile the extension yourself.
 
+Redis version
+-------------
+
+Be careful with lock.inc replacement, actual implementation uses the Redis
+WATCH command, it is actually there only since version 2.1.0. If you use
+the it, it will just pass silently and work gracefully, but lock exclusive
+mutex is exposed to race conditions.
+
+Use Redis 2.1.0 or later if you can! I warned you.
+
 Notes
 -----
 
@@ -25,3 +35,26 @@ Both backends provide the exact same functionnalities. The major difference is
 because PhpRedis uses a PHP extension, and not PHP code, it more performant.
 
 Difference is not that visible, it's really a few millisec on my testing box.
+
+Note that most of the settings are shared. See next sections.
+
+Connect to a remote host
+------------------------
+
+If your Redis instance is remote, you can use this syntax:
+
+  $conf['redis_cache_host'] = '1.2.3.4';
+  $conf['redis_cache_port'] = 1234;
+
+Port is optional, default used is 6379 (default Redis port).
+
+Using a specific database
+-------------------------
+
+Per default, Redis ships the database "0". All default connections will be one
+this one if nothing is specified.
+
+Depending on you OS or OS distribution, you might have numerous database. To
+use one in particular, just add to your settings.php file:
+
+  $conf['redis_cache_base'] = 12;

@@ -92,7 +92,7 @@ function lock_acquire($name, $timeout = 30.0) {
     }
 
     // Register the lock.
-    $locks[$name] = TRUE;
+    return ($locks[$name] = TRUE);
   }
 
   return FALSE;

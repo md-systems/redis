@@ -10,7 +10,7 @@ Predis
 ------
 
 This implementation uses the Predis PHP library. It is compatible PHP 5.3
-only.
+only, and need Redis >= 2.1.0 for using the WATCH command.
 
 PhpRedis
 --------

@@ -38,6 +38,9 @@ Difference is not that visible, it's really a few millisec on my testing box.
 
 Note that most of the settings are shared. See next sections.
 
+Commong settings
+================
+
 Connect to a remote host
 ------------------------
 

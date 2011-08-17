@@ -22,21 +22,22 @@ class Redis_Cache_Predis implements DrupalCacheInterface {
     $client     = Redis_Client::getClient();
     $key        = $this->_buildKey($cid);
 
-    $serialized = $client->get($key . ':serialized');
+    list($serialized, $data) = $client->mget(array($key . ':serialized', $key . ':data'));
 
-    if (!isset($serialized)) {
+    // Fixes http://drupal.org/node/1241922
+    // FIXME: Not sure this test is fail-proof. Using the PhpRedis extension,
+    // Redis values returned seems more strongly typed, which allows a safer
+    // and quicker test here. But using Predis, some returned value are empty
+    // strings, which makes these tests incoherent, sadly.
+    if (!is_bool($serialized) && empty($data)) {
       return FALSE;
     }
 
     $cached          = new stdClass;
-    $cached->data    = $client->get($key . ':data');
+    $cached->data    = $serialized ? unserialize($data) : $data;
     $cached->expires = 0; // FIXME: Redis does not seem to allow us to fetch
                           // expire value. The only solution would be to create
                           // a new key. Who on earth need this value anyway?
-
-    if ($serialized) {
-      $cached->data  = unserialize($cached->data);
-    }
 
     return $cached;
   }

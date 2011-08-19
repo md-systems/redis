@@ -45,25 +45,6 @@ the settings.php file as this:
 
   define('PREDIS_BASE_PATH', DRUPAL_ROOT . '/some/dir/predis/lib/');
 
-Tell Drupal to use the cache backend
-------------------------------------
-
-Usual cache backend configuration, as follows, to add into your settings.php
-file like any other backend:
-
-  $conf['cache_backends'][]            = 'sites/all/modules/redis/predis.cache.inc';
-  $conf['cache_class_cache']           = 'Redis_Cache_Predis';
-  $conf['cache_class_cache_menu']      = 'Redis_Cache_Predis';
-  $conf['cache_class_cache_bootstrap'] = 'Redis_Cache_Predis';
-  // ... Any other bins.
-
-Tell Drupal to use the lock backend
------------------------------------
-
-Usual lock backend override, update you settings.php file as this:
-
-  $conf['lock_inc'] = 'sites/all/modules/custom/redis/predis.lock.inc';
-
 Connect to a remote host and database
 -------------------------------------
 

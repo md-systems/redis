@@ -38,8 +38,30 @@ Difference is not that visible, it's really a few millisec on my testing box.
 
 Note that most of the settings are shared. See next sections.
 
-Commong settings
-================
+Install
+=======
+
+Tell Drupal to use the cache backend
+------------------------------------
+
+Usual cache backend configuration, as follows, to add into your settings.php
+file like any other backend:
+
+  $conf['cache_backends'][]            = 'sites/all/modules/redis/redis.autoload.inc';
+  $conf['cache_class_cache']           = 'Redis_Cache';
+  $conf['cache_class_cache_menu']      = 'Redis_Cache';
+  $conf['cache_class_cache_bootstrap'] = 'Redis_Cache';
+  // ... Any other bins.
+
+Tell Drupal to use the lock backend
+-----------------------------------
+
+Usual lock backend override, update you settings.php file as this:
+
+  $conf['lock_inc'] = 'sites/all/modules/custom/redis/redis.lock.inc';
+
+Common settings
+===============
 
 Connect to a remote host
 ------------------------

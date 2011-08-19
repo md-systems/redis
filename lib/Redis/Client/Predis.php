@@ -1,23 +1,10 @@
 <?php
 
-/*
-print "ohla!";
-
-if (!class_exists('Predis\\Client')) {
-  die("hard");
-}
-else {
-  die("test");
-}
- */
-
 // Define Predis base path if not already set, and if we need to set the
 // autoloader by ourself. This will ensure no crash. Best way would have
 // been that Drupal ships a PSR-0 autoloader, in which we could manually
 // add our library path.
-/*
-if (!class_exists('Predis\\Client')) {
- */
+// if (!class_exists('Predis\Client')) {
   if (!defined('PREDIS_BASE_PATH')) {
 
     $search = DRUPAL_ROOT . '/sites/all/libraries/predis/lib/';
@@ -52,9 +39,7 @@ if (!class_exists('Predis\\Client')) {
       return FALSE;
     });
   }
-/*
-}
- */
+// }
 
 /**
  * Predis client specific implementation.

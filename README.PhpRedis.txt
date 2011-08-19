@@ -16,27 +16,8 @@ You can download this library at:
 This is PHP extension, too recent for being packaged in most distribution, you
 will probably need to compile it yourself.
 
-Tell Drupal to use the cache backend
-------------------------------------
-
-Usual cache backend configuration, as follows, to add into your settings.php
-file like any other backend:
-
-  $conf['cache_backends'][]            = 'sites/all/modules/redis/phpredis.cache..inc';
-  $conf['cache_class_cache']           = 'Redis_Cache_PhpRedis';
-  $conf['cache_class_cache_menu']      = 'Redis_Cache_PhpRedis';
-  $conf['cache_class_cache_bootstrap'] = 'Redis_Cache_PhpRedis';
-  // ... Any other bins.
-
 Default behavior is to connect via tcp://localhost:6379 but you might want to
 connect differently.
-
-Tell Drupal to use the lock backend
------------------------------------
-
-Usual lock backend override, update you settings.php file as this:
-
-  $conf['lock_inc'] = 'sites/all/modules/custom/redis/phpredis.lock.inc';
 
 Connect via UNIX socket
 -----------------------

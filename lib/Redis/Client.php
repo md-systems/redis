@@ -26,6 +26,26 @@ class Redis_Client {
   const REDIS_DEFAULT_BASE = NULL;
 
   /**
+   * Cache implementation namespace.
+   */
+  const REDIS_IMPL_CACHE = 'Redis_Cache_';
+
+  /**
+   * Lock implementation namespace.
+   */
+  const REDIS_IMPL_LOCK = 'Redis_Lock_Backend_';
+
+  /**
+   * Session implementation namespace.
+   */
+  const REDIS_IMPL_SESSION = 'Redis_Session_Backend_';  
+
+  /**
+   * Session implementation namespace.
+   */
+  const REDIS_IMPL_CLIENT = 'Redis_Client_';  
+
+  /**
    * @var Redis_Client_Interface
    */
   protected static $_clientInterface;
@@ -63,8 +83,9 @@ class Redis_Client {
     if (!isset(self::$_clientInterface)) {
       global $conf;
 
-      if (isset($conf['redis_client_interface']) && class_exists($conf['redis_client_interface'])) {
-        self::$_clientInterface = new $conf['redis_client_interface'];
+      if ($clientName = variable_get('redis_client_interface', FALSE)) {
+        $className = self::getClass(self::REDIS_IMPL_CLIENT, $clientName);
+        self::$_clientInterface = new $className();
       }
       else {
         if (!isset(self::$_clientInterface)) {
@@ -100,5 +121,30 @@ class Redis_Client {
     }
 
     return self::$_client;
+  }
+
+  /**
+   * Get specific class implementing the current client usage for the specific
+   * asked core subsystem.
+   * 
+   * @param string $system
+   *   One of the Redis_Client::IMPL_* constant.
+   * @param string $clientName
+   *   Client name, if fixed.
+   * 
+   * @return string
+   *   Class name, if found.
+   * 
+   * @throws Exception
+   *   If not found.
+   */
+  public static function getClass($system, $clientName = NULL) {
+    $className = $system . (isset($clientName) ? $clientName : self::getClientName());
+
+    if (!class_exists($className)) {
+      throw new Exception($className . " does not exists");
+    }
+
+    return $className;
   }
 }

@@ -10,6 +10,10 @@
  * See README.txt file for details.
  */
 
+// Include our own autoloader to ensure classes to be there.
+// We cannot rely on core in case of early bootstrap phases.
+require_once dirname(__FILE__) . '/redis.autoload.inc';
+
 /**
  * Foo function, keeping it for API consistency.
  */

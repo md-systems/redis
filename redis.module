@@ -8,6 +8,10 @@
  * something else than lock and cache.
  */
 
+// Include our own autoloader to ensure classes to be there.
+// We cannot rely on core in case of early bootstrap phases.
+require_once dirname(__FILE__) . '/redis.autoload.inc';
+
 /**
  * Implements hook_menu().
  */

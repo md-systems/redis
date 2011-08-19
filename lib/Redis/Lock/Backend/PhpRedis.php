@@ -92,10 +92,12 @@ class Redis_Lock_Backend_PhpRedis extends Redis_Lock_Backend_Default {
 
     unset($this->_locks[$name]);
 
+    // Ensure the lock deletion is an atomic transaction. If another thread
+    // manages to removes all lock, we can not alter it anymore else we will
+    // release the lock for the other thread and cause race conditions.
     $client->watch($keyOwn);
 
-    // FIXME: Atomicity. Problem here is the check.
-    if ($client->get($key . ':owner' == $id)) {
+    if ($client->get($keyOwn) == $id) {
       $client->multi();
       $client->del(array($key, $keyOwn));
       $client->exec();
@@ -116,11 +118,12 @@ class Redis_Lock_Backend_PhpRedis extends Redis_Lock_Backend_Default {
     // We can afford to deal with a slow algorithm here, this should not happen
     // on normal run because we should have removed manually all our locks.
     foreach ($this->_locks as $name => $foo) {
-      $key = 'lock:' . $name;
+      $key    = 'lock:' . $name;
+      $keyOwn = $key . ':owner';
+      $owner  = $client->get($keyOwn);
 
-      // FIXME: Once again, this is not atomic, see lock_release() documentation.
-      if ($client->get($key . ':owner' == $id)) {
-        $client->del(array($key, $key . ':owner'));
+      if (empty($owner) || $owner == $id) {
+        $client->del(array($key, $keyOwn));
       }
     }
   }

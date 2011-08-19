@@ -104,11 +104,12 @@ class Redis_Lock_Backend_Predis extends Redis_Lock_Backend_Default {
 
     unset($this->_locks[$name]);
 
-    // FIXME: AFAIK for acquire operation, the mutex is OK, but I'm not sure
-    // for this one, it'll need further brainstorming.
+    // Ensure the lock deletion is an atomic transaction. If another thread
+    // manages to removes all lock, we can not alter it anymore else we will
+    // release the lock for the other thread and cause race conditions.
     $client->watch($keyOwn);
 
-    if ($client->get($keyOwn == $id)) {
+    if ($client->get($keyOwn) == $id) {
       $client->multi();
       $client->del(array($key, $keyOwn));
       $client->exec();
@@ -129,14 +130,14 @@ class Redis_Lock_Backend_Predis extends Redis_Lock_Backend_Default {
     // We can afford to deal with a slow algorithm here, this should not happen
     // on normal run because we should have removed manually all our locks.
     foreach ($this->_locks as $name => $foo) {
-      $key = 'lock:' . $name;
-
-      // FIXME: Once again, this is not atomic, see lock_release() documentation.
-      $owner = $client->get($key . ':owner');
+      $key    = 'lock:' . $name;
+      $keyOwn = $key . ':owner';
+      $owner  = $client->get($keyOwn);
 
       if (empty($owner) || $owner == $id) {
-        $client->del(array($key, $key . ':owner'));
+        $client->del(array($key, $keyOwn));
       }
     }
   }
 }
+

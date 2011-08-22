@@ -41,6 +41,15 @@ Note that most of the settings are shared. See next sections.
 Install
 =======
 
+Choose the Redis client library to use
+--------------------------------------
+
+Add into your settings.php file:
+
+  $conf['redis_client_interface']      = 'PhpRedis';
+
+You can replace 'PhpRedis' with 'Predis', depending on the library you chose. 
+
 Tell Drupal to use the cache backend
 ------------------------------------
 

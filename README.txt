@@ -93,6 +93,18 @@ use one in particular, just add to your settings.php file:
 
   $conf['redis_client_base'] = 12;
 
+Prefixing site cache entries (avoiding sites name collision)
+------------------------------------------------------------
+
+If you need to differenciate multiple sites using the same Redis instance and
+database, you will need to specify a prefix for your site cache entries:
+
+
+  $conf['cache_prefix'] = 'mysite_';
+
+If you don't set this, the module will attempt to use the HTTP_HOST variable,
+but it has many incovenients and is absolutely not failsafe.
+
 Lock backends
 -------------
 

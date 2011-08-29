@@ -3,24 +3,11 @@
 /**
  * Predis cache backend.
  */
-class Redis_Cache_PhpRedis implements DrupalCacheInterface {
-  /**
-   * @var string
-   */
-  protected $_bin;
-
-  function __construct($bin) {
-    $this->_bin = $bin;
-  }
-
-  protected function _buildKey($cid) {
-    // FIXME: Handle site.
-    return $this->_bin . ':' . $cid;
-  }
+class Redis_Cache_PhpRedis extends Redis_Cache_Base {
 
   function get($cid) {
     $client     = Redis_Client::getClient();
-    $key        = $this->_buildKey($cid);
+    $key        = $this->getKey($cid);
 
     list($serialized, $data) = $client->mget(array($key . ':serialized', $key . ':data'));
 
@@ -43,7 +30,7 @@ class Redis_Cache_PhpRedis implements DrupalCacheInterface {
     $ret = $keys = $exclude = array();
 
     foreach ($cids as $cid) {
-      $key       = $this->_buildKey($cid);
+      $key       = $this->getKey($cid);
       $keys[]    = $key . ':data';
       $keys[]    = $key . ':serialized';
     }
@@ -84,7 +71,7 @@ class Redis_Cache_PhpRedis implements DrupalCacheInterface {
 
   function set($cid, $data, $expire = CACHE_PERMANENT) {
     $client = Redis_Client::getClient();
-    $key    = $this->_buildKey($cid);
+    $key    = $this->getKey($cid);
 
     if (isset($data) && !is_scalar($data)) {
       $serialize = TRUE;
@@ -125,15 +112,15 @@ class Redis_Cache_PhpRedis implements DrupalCacheInterface {
     }
 
     if ('*' !== $cid && $wildcard) {
-      $key  = $this->_buildKey('*' . $cid . '*');
+      $key  = $this->getKey('*' . $cid . '*');
       $many = TRUE;
     }
     else if ('*' === $cid) {
-      $key  = $this->_buildKey($cid);
+      $key  = $this->getKey($cid);
       $many = TRUE;
     }
     else {
-      $key = $this->_buildKey($cid);
+      $key = $this->getKey($cid);
     }
 
     if ($many) {

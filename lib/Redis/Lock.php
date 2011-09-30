@@ -7,7 +7,7 @@ class Redis_Lock {
   /**
    * @var Redis_Lock_Backend_Interface
    */
-  private static $__instance;
+  private static $instance;
 
   /**
    * Get actual lock backend.
@@ -15,10 +15,10 @@ class Redis_Lock {
    * @return Redis_Lock_Backend_Interface
    */
   public static function getBackend() {
-    if (!isset(self::$__instance)) {
+    if (!isset(self::$instance)) {
       $className = Redis_Client::getClass(Redis_Client::REDIS_IMPL_LOCK);
-      self::$__instance = new $className();
+      self::$instance = new $className();
     }
-    return self::$__instance;
+    return self::$instance;
   }
 }

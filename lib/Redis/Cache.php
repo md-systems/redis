@@ -7,30 +7,30 @@ class Redis_Cache implements DrupalCacheInterface {
   /**
    * @var DrupalCacheInterface
    */
-  protected $_parent;
+  protected $backend;
 
   function __construct($bin) {
     $className = Redis_Client::getClass(Redis_Client::REDIS_IMPL_CACHE);
-    $this->_parent = new $className($bin);
+    $this->backend = new $className($bin);
   }
 
   function get($cid) {
-    return $this->_parent->get($cid);
+    return $this->backend->get($cid);
   }
 
   function getMultiple(&$cids) {
-    return $this->_parent->getMultiple($cids);
+    return $this->backend->getMultiple($cids);
   }
 
   function set($cid, $data, $expire = CACHE_PERMANENT) {
-    $this->_parent->set($cid, $data, $expire);
+    $this->backend->set($cid, $data, $expire);
   }
 
   function clear($cid = NULL, $wildcard = FALSE) {
-    $this->_parent->clear($cid, $wildcard);
+    $this->backend->clear($cid, $wildcard);
   }
 
   function isEmpty() {
-    return $this->_parent->isEmpty();
+    return $this->backend->isEmpty();
   }
 }

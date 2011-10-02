@@ -112,7 +112,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     }
 
     if ('*' !== $cid && $wildcard) {
-      $key  = $this->getKey('*' . $cid . '*');
+      $key  = $this->getKey($cid . '*');
       $many = TRUE;
     }
     else if ('*' === $cid) {

@@ -67,7 +67,7 @@ Tell Drupal to use the lock backend
 
 Usual lock backend override, update you settings.php file as this:
 
-  $conf['lock_inc'] = 'sites/all/modules/custom/redis/redis.lock.inc';
+  $conf['lock_inc'] = 'sites/all/modules/redis/redis.lock.inc';
 
 Common settings
 ===============

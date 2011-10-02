@@ -35,16 +35,13 @@ class Redis_Client_Predis implements Redis_Client_Interface {
         // library is PHP 5.3 only, we can afford doing closures safely.
         spl_autoload_register(function($class_name) {
           $parts = explode('\\', $class_name);
-    
           if ('Predis' === $parts[0]) {
             $filename = PREDIS_BASE_PATH . implode('/', $parts) . '.php';
-      
             if (file_exists($filename)) {
               require_once $filename;
               return TRUE;
             }
           }
-      
           return FALSE;
         });
       }

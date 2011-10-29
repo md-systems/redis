@@ -50,7 +50,7 @@ abstract class Redis_Lock_Backend_Default implements Redis_Lock_Backend_Interfac
       // 500ms, to reduce the potential for a lock stampede.
       $delay = $delay - $sleep;
       $sleep = min(500000, $sleep + 25000, $delay);
-      if (lock_may_be_available($name)) {
+      if ($this->lockMayBeAvailable($name)) {
         // No longer need to wait.
         return FALSE;
       }

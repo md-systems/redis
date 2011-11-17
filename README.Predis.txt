@@ -29,6 +29,7 @@ Download and install library
 ----------------------------
 
 Once done, you either have to clone it into:
+
   sites/all/libraries/predis
 
 So that you have the following directory tree:

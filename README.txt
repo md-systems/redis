@@ -97,13 +97,51 @@ Prefixing site cache entries (avoiding sites name collision)
 ------------------------------------------------------------
 
 If you need to differenciate multiple sites using the same Redis instance and
-database, you will need to specify a prefix for your site cache entries:
+database, you will need to specify a prefix for your site cache entries.
 
+Cache prefix configuration attemps to use a unified variable accross contrib
+backends that support this feature. This variable name is 'cache_prefix'.
+
+This variable is polymorphic, the simplest version is to provide a raw string
+that will be the default prefix for all cache bins:
 
   $conf['cache_prefix'] = 'mysite_';
 
-If you don't set this, the module will attempt to use the HTTP_HOST variable,
-but it has many incovenients and is absolutely not failsafe.
+Alternatively, to provide the same functionnality, you can provide the variable
+as an array:
+
+  $conf['cache_prefix']['default'] = 'mysite_';
+
+This allows you to provide different prefix depending on the bin name. Common
+usage is that each key inside the 'cache_prefix' array is a bin name, the value
+the associated prefix. If the value is explicitely FALSE, then no prefix is
+used for this bin.
+
+The 'default' meta bin name is provided to define the default prefix for non
+specified bins. It behaves like the other names, which means that an explicit
+FALSE will order the backend not to provide any prefix for any non specified
+bin.
+
+Here is a complex sample:
+
+  // Default behavior for all bins, prefix is 'mysite_'.
+  $conf['cache_prefix']['default'] = 'mysite_';
+
+  // Set no prefix explicitely for 'cache' and 'cache_bootstrap' bins.
+  $conf['cache_prefix']['cache'] = FALSE;
+  $conf['cache_prefix']['cache_bootstrap'] = FALSE;
+
+  // Set another prefix for 'cache_menu' bin.
+  $conf['cache_prefix']['cache_menu'] = 'menumysite_';
+
+Note that if you don't specify the default behavior, the Redis module will
+attempt to use the HTTP_HOST variable in order to provide a multisite safe
+default behavior. Notice that this is not failsafe, in such environment you
+are strongly advised to set at least an explicit default prefix.
+
+Note that this last note is Redis only specific, because per default Redis
+server will not namespace data, thus sharing an instance for multiple sites
+will create conflicts. This is not true for every backends.
 
 Lock backends
 -------------

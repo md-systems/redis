@@ -38,12 +38,12 @@ class Redis_Client {
   /**
    * Session implementation namespace.
    */
-  const REDIS_IMPL_SESSION = 'Redis_Session_Backend_';  
+  const REDIS_IMPL_SESSION = 'Redis_Session_Backend_';
 
   /**
    * Session implementation namespace.
    */
-  const REDIS_IMPL_CLIENT = 'Redis_Client_';  
+  const REDIS_IMPL_CLIENT = 'Redis_Client_';
 
   /**
    * @var Redis_Client_Interface
@@ -115,9 +115,9 @@ class Redis_Client {
 
       // Always prefer socket connection.
       self::$_client = self::getClientInterface()->getClient(
-        isset($conf['redis_cache_host']) ? $conf['redis_client_host'] : self::REDIS_DEFAULT_HOST,
-        isset($conf['redis_cache_port']) ? $conf['redis_client_port'] : self::REDIS_DEFAULT_PORT,
-        isset($conf['redis_cache_base']) ? $conf['redis_client_base'] : self::REDIS_DEFAULT_BASE);
+        isset($conf['redis_client_host']) ? $conf['redis_client_host'] : self::REDIS_DEFAULT_HOST,
+        isset($conf['redis_client_port']) ? $conf['redis_client_port'] : self::REDIS_DEFAULT_PORT,
+        isset($conf['redis_client_base']) ? $conf['redis_client_base'] : self::REDIS_DEFAULT_BASE);
     }
 
     return self::$_client;

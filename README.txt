@@ -80,12 +80,12 @@ If your Redis instance is remote, you can use this syntax:
   $conf['redis_client_host'] = '1.2.3.4';
   $conf['redis_client_port'] = 1234;
 
-Port is optional, default used is 6379 (default Redis port).
+Port is optional, default is 6379 (default Redis port).
 
 Using a specific database
 -------------------------
 
-Per default, Redis ships the database "0". All default connections will be one
+Per default, Redis ships the database "0". All default connections will be use
 this one if nothing is specified.
 
 Depending on you OS or OS distribution, you might have numerous database. To
@@ -139,16 +139,15 @@ attempt to use the HTTP_HOST variable in order to provide a multisite safe
 default behavior. Notice that this is not failsafe, in such environment you
 are strongly advised to set at least an explicit default prefix.
 
-Note that this last note is Redis only specific, because per default Redis
+Note that this last notice is Redis only specific, because per default Redis
 server will not namespace data, thus sharing an instance for multiple sites
-will create conflicts. This is not true for every backends.
+will create conflicts. This is not true for every contributed backends.
 
 Lock backends
 -------------
 
-Both implementations provides a Redis lock backend. Lock backend, being used
-with MySQL and Redis on the same backend is faster than default one, whatever
-implementation you are using.
+Both implementations provides a Redis lock backend. Redis lock backend proved to
+be faster than the default SQL based one when using both servers on the same box.
 
 Both backends, thanks to the Redis WATCH, MULTI and EXEC commands provides a
 real race condition free mutexes if you use Redis >= 2.1.0.

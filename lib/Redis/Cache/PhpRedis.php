@@ -9,17 +9,14 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     $client     = Redis_Client::getClient();
     $key        = $this->getKey($cid);
 
-    list($serialized, $data) = $client->mget(array($key . ':serialized', $key . ':data'));
+    $cached = $client->get($key);
 
-    if (FALSE === $data) {
+    if (FALSE === $cached) {
       return FALSE;
     }
-
-    $cached          = new stdClass;
-    $cached->data    = $serialized ? unserialize($data) : $data;
-    $cached->expires = 0; // FIXME: Redis does not seem to allow us to fetch
-                          // expire value. The only solution would be to create
-                          // a new key. Who on earth need this value anyway?
+    else {
+      $cached = unserialize($cached);
+    }
 
     return $cached;
   }
@@ -30,33 +27,17 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     $ret = $keys = $exclude = array();
 
     foreach ($cids as $cid) {
-      $key       = $this->getKey($cid);
-      $keys[]    = $key . ':data';
-      $keys[]    = $key . ':serialized';
+      $keys[]      = $this->getKey($cid);
     }
 
     $result = $client->mget($keys);
 
-    $index = 0;
-    foreach ($cids as $cid) {
-      $serialized = $result[$index + 1];
-
-      if (FALSE === $serialized) {
-        $exclude[$cid] = TRUE;
-
-        continue;
-      }
-
-      $cached          = new stdClass;
-      $cached->data    = $result[$index];
-      $cached->expires = 0; // FIXME: See comment in get() method.
-  
-      if ($serialized) {
-        $cached->data  = unserialize($cached->data);
+    foreach ($result as $cid => $cached) {
+      if ($cached) {
+        $cached = unserialize($cached);
       }
 
       $ret[$cid] = $cached;
-      $index += 2;
     }
 
     // WTF Drupal, we need to manually remove entries from &$cids.
@@ -73,13 +54,13 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     $client = Redis_Client::getClient();
     $key    = $this->getKey($cid);
 
-    if (isset($data) && !is_scalar($data)) {
-      $serialize = TRUE;
-      $data      = serialize($data);
-    }
-    else {
-      $serialize = FALSE;
-    }
+    $cached = array(
+      'cid' => (string)$cid,
+      'created' => REQUEST_TIME,
+      'expire' => $expire,
+      'data' => $data,
+    );
+
 
     $client->multi(Redis::PIPELINE);
 
@@ -88,15 +69,13 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
       // FIXME: Handle CACHE_TEMPORARY correctly.
       case CACHE_TEMPORARY:
       case CACHE_PERMANENT:
-        $client->set($key . ':data',        $data);
-        $client->set($key . ':serialized' , (int)$serialize);
+        $client->set($key, serialize((object)$cached));
         // We dont need the PERSIST command, since it's the default.
         break;
 
       default:
         $delay = $expire - time();
-        $client->setex($key . ':data',       $delay, $data);
-        $client->setex($key . ':serialized', $delay, (int)$serialize);
+        $client->setex($key, $delay, serialize((object)$cached));
     }
 
     $client->exec();
@@ -132,10 +111,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
       }
     }
     else {
-      $client->del(array(
-        $key . ':data',
-        $key . ':serialized',
-      ));
+      $client->del(array($key));
     }
   }
 

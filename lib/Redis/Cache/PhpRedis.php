@@ -15,34 +15,30 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
       return FALSE;
     }
     else {
-      $cached = unserialize($cached);
+      return unserialize($cached);
     }
-
-    return $cached;
   }
 
   function getMultiple(&$cids) {
     $client = Redis_Client::getClient();
 
-    $ret = $keys = $exclude = array();
+    $ret = $keys = array();
 
     foreach ($cids as $cid) {
-      $keys[]      = $this->getKey($cid);
+      $keys[] = $this->getKey($cid);
     }
 
     $result = $client->mget($keys);
 
     foreach ($result as $cid => $cached) {
-      if ($cached) {
-        $cached = unserialize($cached);
+      if (is_string($cached)) {
+        $ret[$cid] = unserialize($cached);
       }
-
-      $ret[$cid] = $cached;
     }
 
     // WTF Drupal, we need to manually remove entries from &$cids.
     foreach ($cids as $index => $cid) {
-      if (isset($exclude[$cid])) {
+      if (isset($ret[$cid])) {
         unset($cids[$index]);
       }
     }
@@ -60,7 +56,6 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
       'expire' => $expire,
       'data' => $data,
     );
-
 
     $client->multi(Redis::PIPELINE);
 

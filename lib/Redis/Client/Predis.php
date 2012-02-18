@@ -48,7 +48,7 @@ class Redis_Client_Predis implements Redis_Client_Interface {
     }
   }
 
-  public function getClient($host = NULL, $port = NULL, $base = NULL) {
+  public function getClient($host = NULL, $port = NULL, $base = NULL, $password = NULL) {
     $connectionInfo = array(
       'host'     => $host,
       'port'     => $port,
@@ -63,7 +63,13 @@ class Redis_Client_Predis implements Redis_Client_Interface {
 
     self::setPredisAutoload();
 
-    return new Predis\Client($connectionInfo);
+    $client = new Predis\Client($connectionInfo);
+
+    if (isset($password)) {
+      $client->auth($password);
+    }
+
+    return $client;
   }
 
   public function getName() {

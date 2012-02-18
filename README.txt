@@ -93,6 +93,21 @@ use one in particular, just add to your settings.php file:
 
   $conf['redis_client_base'] = 12;
 
+Connection to a password protected instance
+-------------------------------------------
+
+If you are using a password protected instance, specify the password this way:
+
+  $conf['redis_client_pass'] = "mypassword";
+
+Depending on the backend, using a wrong auth will behave differently:
+
+ - Predis will throw an exception and make Drupal fail during early boostrap.
+
+ - PhpRedis will make Redis calls silent and creates some PHP warnings, thus
+   Drupal will behave as if it was running with a null cache backend (no cache
+   at all).
+
 Prefixing site cache entries (avoiding sites name collision)
 ------------------------------------------------------------
 

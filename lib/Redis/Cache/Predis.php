@@ -25,20 +25,22 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
     $ret = $keys = array();
 
     foreach ($cids as $cid) {
-      $keys[] = $this->getKey($cid);
+      $keys[$cid] = $this->getKey($cid);
     }
 
-    $result = $client->mget($keys);
+    // Not doing array_values() call here would make Predis change behavior and
+    // fail raising PHP warnings.
+    $result = $client->mget(array_values($keys));
 
-    foreach ($result as $cid => $cached) {
+    foreach ($result as $key => $cached) {
       if ($cached) {
-        $ret[$cid] = unserialize($cached);
+        $cached = unserialize($cached);
+        $ret[$cached->cid] = $cached;
       }
     }
 
-    // WTF Drupal, we need to manually remove entries from &$cids.
     foreach ($cids as $index => $cid) {
-      if (isset($ret[$cid])) {
+      if (!isset($ret[$cid])) {
         unset($cids[$index]);
       }
     }

@@ -25,20 +25,20 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     $ret = $keys = array();
 
     foreach ($cids as $cid) {
-      $keys[] = $this->getKey($cid);
+      $keys[$cid] = $this->getKey($cid);
     }
 
     $result = $client->mget($keys);
 
-    foreach ($result as $cid => $cached) {
+    foreach ($result as $cached) {
       if (is_string($cached)) {
-        $ret[$cid] = unserialize($cached);
+        $cached = unserialize($cached);
+        $ret[$cached->cid] = $cached;
       }
     }
 
-    // WTF Drupal, we need to manually remove entries from &$cids.
     foreach ($cids as $index => $cid) {
-      if (isset($ret[$cid])) {
+      if (!isset($ret[$cid])) {
         unset($cids[$index]);
       }
     }

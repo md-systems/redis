@@ -98,7 +98,7 @@ Connection to a password protected instance
 
 If you are using a password protected instance, specify the password this way:
 
-  $conf['redis_client_pass'] = "mypassword";
+  $conf['redis_client_password'] = "mypassword";
 
 Depending on the backend, using a wrong auth will behave differently:
 

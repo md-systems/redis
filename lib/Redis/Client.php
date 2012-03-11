@@ -28,7 +28,7 @@ class Redis_Client {
   /**
    * Redis default password: will not authenticate.
    */
-  const REDIS_DEFAULT_PASS = NULL;
+  const REDIS_DEFAULT_PASSWORD = NULL;
 
   /**
    * Cache implementation namespace.
@@ -123,7 +123,7 @@ class Redis_Client {
         isset($conf['redis_client_host']) ? $conf['redis_client_host'] : self::REDIS_DEFAULT_HOST,
         isset($conf['redis_client_port']) ? $conf['redis_client_port'] : self::REDIS_DEFAULT_PORT,
         isset($conf['redis_client_base']) ? $conf['redis_client_base'] : self::REDIS_DEFAULT_BASE,
-        isset($conf['redis_client_pass']) ? $conf['redis_client_pass'] : self::REDIS_DEFAULT_PASS);
+        isset($conf['redis_client_password']) ? $conf['redis_client_password'] : self::REDIS_DEFAULT_PASSWORD);
     }
 
     return self::$_client;

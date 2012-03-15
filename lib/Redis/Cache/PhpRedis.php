@@ -9,30 +9,41 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     $client     = Redis_Client::getClient();
     $key        = $this->getKey($cid);
 
-    $cached = $client->get($key);
+    $cached = $client->hgetall($key);
 
-    if (FALSE === $cached) {
+    if (FALSE === $cached || empty($cached)) {
       return FALSE;
     }
-    else {
-      return unserialize($cached);
+
+    $cached = (object)$cached;
+
+    if ($cached->serialized) {
+      $cached->data = unserialize($cached->data);
     }
+
+    return $cached;
   }
 
   function getMultiple(&$cids) {
     $client = Redis_Client::getClient();
 
-    $ret = $keys = array();
+    $ret = array();
+    $keys = array_map(array($this, 'getKey'), $cids);
 
-    foreach ($cids as $cid) {
-      $keys[$cid] = $this->getKey($cid);
+    $pipe = $client->multi(Redis::PIPELINE);
+    foreach ($keys as $key) {
+      $pipe->hgetall($key);
     }
+    $replies = $pipe->exec();
 
-    $result = $client->mget($keys);
+    foreach ($replies as $reply) {
+      if (!empty($reply)) {
+        $cached = (object)$reply;
 
-    foreach ($result as $cached) {
-      if (is_string($cached)) {
-        $cached = unserialize($cached);
+        if ($cached->serialized) {
+          $cached->data = unserialize($cached->data);
+        }
+
         $ret[$cached->cid] = $cached;
       }
     }
@@ -50,30 +61,39 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     $client = Redis_Client::getClient();
     $key    = $this->getKey($cid);
 
-    $cached = array(
-      'cid' => (string)$cid,
-      'created' => REQUEST_TIME,
+    $hash = array(
+      'cid' => $cid,
+      'created' => time(),
       'expire' => $expire,
-      'data' => $data,
     );
 
-    $client->multi(Redis::PIPELINE);
+    // Let Redis handle the data types itself.
+    if (!is_scalar($data)) {
+      $hash['data'] = serialize($data);
+      $hash['serialized'] = 1;
+    }
+    else {
+      $hash['data'] = $data;
+      $hash['serialized'] = 0;
+    }
+
+    $pipe = $client->multi(Redis::PIPELINE);
+    $pipe->hmset($key, $hash);
 
     switch ($expire) {
 
       // FIXME: Handle CACHE_TEMPORARY correctly.
       case CACHE_TEMPORARY:
       case CACHE_PERMANENT:
-        $client->set($key, serialize((object)$cached));
         // We dont need the PERSIST command, since it's the default.
         break;
 
       default:
         $delay = $expire - time();
-        $client->setex($key, $delay, serialize((object)$cached));
+        $pipe->expire($key, $delay);
     }
 
-    $client->exec();
+    $pipe->exec();
   }
 
   function clear($cid = NULL, $wildcard = FALSE) {

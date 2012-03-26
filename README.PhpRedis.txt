@@ -26,7 +26,8 @@ Just add this line to your settings.php file:
 
   $conf['redis_cache_socket'] = '/tmp/redis.sock';
 
-Don't forget to change the path depending on you operating system.
+Don't forget to change the path depending on your operating system and Redis
+server configuration.
 
 Connect to a remote host and database
 -------------------------------------
@@ -34,4 +35,4 @@ Connect to a remote host and database
 See README.txt file.
 
 For this particular implementation, host settings are overridden by the
-UNIX socket parameter. Database setting of course is not.
+UNIX socket parameter.

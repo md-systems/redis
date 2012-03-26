@@ -55,4 +55,6 @@ Advanced configuration (PHP expert)
 -----------------------------------
 
 Best solution is, whatever is the place where you put the Predis library, that
-you set up a fully working autoloader able to use it.
+you set up a fully working autoloader able to use it. The one being used by the
+Redis module is a default fallback and will naturally being appened to the SPL
+autoloader stack.

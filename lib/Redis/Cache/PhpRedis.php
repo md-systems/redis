@@ -9,17 +9,17 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     $client     = Redis_Client::getClient();
     $key        = $this->getKey($cid);
 
-    list($serialized, $data) = $client->mget(array($key . ':serialized', $key . ':data'));
+    $cached = $client->hgetall($key);
 
-    if (FALSE === $data) {
+    if (FALSE === $cached || empty($cached)) {
       return FALSE;
     }
 
-    $cached          = new stdClass;
-    $cached->data    = $serialized ? unserialize($data) : $data;
-    $cached->expires = 0; // FIXME: Redis does not seem to allow us to fetch
-                          // expire value. The only solution would be to create
-                          // a new key. Who on earth need this value anyway?
+    $cached = (object)$cached;
+
+    if ($cached->serialized) {
+      $cached->data = unserialize($cached->data);
+    }
 
     return $cached;
   }
@@ -27,41 +27,29 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
   function getMultiple(&$cids) {
     $client = Redis_Client::getClient();
 
-    $ret = $keys = $exclude = array();
+    $ret = array();
+    $keys = array_map(array($this, 'getKey'), $cids);
 
-    foreach ($cids as $cid) {
-      $key       = $this->getKey($cid);
-      $keys[]    = $key . ':data';
-      $keys[]    = $key . ':serialized';
+    $pipe = $client->multi(Redis::PIPELINE);
+    foreach ($keys as $key) {
+      $pipe->hgetall($key);
+    }
+    $replies = $pipe->exec();
+
+    foreach ($replies as $reply) {
+      if (!empty($reply)) {
+        $cached = (object)$reply;
+
+        if ($cached->serialized) {
+          $cached->data = unserialize($cached->data);
+        }
+
+        $ret[$cached->cid] = $cached;
+      }
     }
 
-    $result = $client->mget($keys);
-
-    $index = 0;
-    foreach ($cids as $cid) {
-      $serialized = $result[$index + 1];
-
-      if (FALSE === $serialized) {
-        $exclude[$cid] = TRUE;
-
-        continue;
-      }
-
-      $cached          = new stdClass;
-      $cached->data    = $result[$index];
-      $cached->expires = 0; // FIXME: See comment in get() method.
-  
-      if ($serialized) {
-        $cached->data  = unserialize($cached->data);
-      }
-
-      $ret[$cid] = $cached;
-      $index += 2;
-    }
-
-    // WTF Drupal, we need to manually remove entries from &$cids.
     foreach ($cids as $index => $cid) {
-      if (isset($exclude[$cid])) {
+      if (!isset($ret[$cid])) {
         unset($cids[$index]);
       }
     }
@@ -73,33 +61,39 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     $client = Redis_Client::getClient();
     $key    = $this->getKey($cid);
 
-    if (isset($data) && !is_scalar($data)) {
-      $serialize = TRUE;
-      $data      = serialize($data);
+    $hash = array(
+      'cid' => $cid,
+      'created' => time(),
+      'expire' => $expire,
+    );
+
+    // Let Redis handle the data types itself.
+    if (!is_scalar($data)) {
+      $hash['data'] = serialize($data);
+      $hash['serialized'] = 1;
     }
     else {
-      $serialize = FALSE;
+      $hash['data'] = $data;
+      $hash['serialized'] = 0;
     }
 
-    $client->multi(Redis::PIPELINE);
+    $pipe = $client->multi(Redis::PIPELINE);
+    $pipe->hmset($key, $hash);
 
     switch ($expire) {
 
       // FIXME: Handle CACHE_TEMPORARY correctly.
       case CACHE_TEMPORARY:
       case CACHE_PERMANENT:
-        $client->set($key . ':data',        $data);
-        $client->set($key . ':serialized' , (int)$serialize);
         // We dont need the PERSIST command, since it's the default.
         break;
 
       default:
         $delay = $expire - time();
-        $client->setex($key . ':data',       $delay, $data);
-        $client->setex($key . ':serialized', $delay, (int)$serialize);
+        $pipe->expire($key, $delay);
     }
 
-    $client->exec();
+    $pipe->exec();
   }
 
   function clear($cid = NULL, $wildcard = FALSE) {
@@ -132,10 +126,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
       }
     }
     else {
-      $client->del(array(
-        $key . ':data',
-        $key . ':serialized',
-      ));
+      $client->del(array($key));
     }
   }
 

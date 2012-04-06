@@ -44,7 +44,7 @@ class Redis_Lock_Backend_PhpRedis extends Redis_Lock_Backend_Default {
         return FALSE;
       }
 
-      return TRUE;
+      return ($this->_locks[$name] = TRUE);
     }
     else {
       $client->watch($key);
@@ -81,7 +81,7 @@ class Redis_Lock_Backend_PhpRedis extends Redis_Lock_Backend_Default {
 
     list($value, $owner) = $client->mget(array($key, $key . ':owner'));
 
-    return (FALSE !== $value || 0 == $value) && $id == $owner;
+    return FALSE === $value || $id == $owner;
   }
 
   public function lockRelease($name) {

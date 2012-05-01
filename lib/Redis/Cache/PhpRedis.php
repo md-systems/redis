@@ -11,7 +11,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
 
     $cached = $client->hgetall($key);
 
-    if (FALSE === $cached || empty($cached)) {
+    if (empty($cached)) {
       return FALSE;
     }
 

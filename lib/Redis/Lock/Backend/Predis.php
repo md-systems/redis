@@ -75,7 +75,7 @@ class Redis_Lock_Backend_Predis extends Redis_Lock_Backend_Default {
       // case in which we cannot proceed.
       // EXPIRE and SETEX won't return something here, EXEC return is index 2.
       // This was determined debugging, seems to be Predis specific.
-      if (FALSE === $execReply[2] || 1 != $execReply[1]) {
+      if (FALSE === $execReply[2] || 1 != $execReply[0]) {
         return FALSE;
       }
 
@@ -93,7 +93,7 @@ class Redis_Lock_Backend_Predis extends Redis_Lock_Backend_Default {
 
     list($value, $owner) = $client->mget(array($key, $key . ':owner'));
 
-    return (FALSE !== $value || 0 == $value) && $id == $owner;
+    return empty($value) || $id == $owner;
   }
 
   public function lockRelease($name) {

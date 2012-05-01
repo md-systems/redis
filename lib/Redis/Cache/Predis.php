@@ -100,12 +100,14 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
     $client = Redis_Client::getClient();
     $many   = FALSE;
 
-    // Redis handles for us cache key expiration.
-    if (!isset($cid)) {
-      return;
+    // We cannot determine which keys are going to expire, so we need to flush
+    // the full bin case we have an explicit NULL provided. This means that
+    // stuff like block and cache pages may be expired too often.
+    if (NULL === $cid) {
+      $key = $this->getKey('*');
+      $many = TRUE;
     }
-
-    if ('*' !== $cid && $wildcard) {
+    else if ('*' !== $cid && $wildcard) {
       $key  = $this->getKey($cid . '*');
       $many = TRUE;
     }

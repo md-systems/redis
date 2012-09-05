@@ -50,7 +50,7 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
     }
 
     foreach ($cids as $index => $cid) {
-      if (!isset($ret[$cid])) {
+      if (isset($ret[$cid])) {
         unset($cids[$index]);
       }
     }

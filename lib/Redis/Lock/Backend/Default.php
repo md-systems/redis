@@ -6,21 +6,21 @@
 abstract class Redis_Lock_Backend_Default implements Redis_Lock_Backend_Interface {
   /**
    * Current page lock token identifier.
-   * 
+   *
    * @var string
    */
   protected $_lockId;
 
   /**
    * Existing locks for this page.
-   * 
+   *
    * @var array
    */
   protected $_locks = array();
 
   /**
    * Default implementation from actual Drupal core.
-   * 
+   *
    * @see Redis_Lock_Backend_Interface::lockWait()
    */
   public function lockWait($name, $delay = 30) {
@@ -61,7 +61,7 @@ abstract class Redis_Lock_Backend_Default implements Redis_Lock_Backend_Interfac
 
   /**
    * Default implementation from actual Drupal core.
-   * 
+   *
    * @see Redis_Lock_Backend_Interface::getLockId()
    */
   public function getLockId() {
@@ -71,5 +71,12 @@ abstract class Redis_Lock_Backend_Default implements Redis_Lock_Backend_Interfac
       drupal_register_shutdown_function('lock_release_all', $this->_lockId);
     }
     return $this->_lockId;
+  }
+
+  /**
+   * Generate a redis key name for the current lock name
+   */
+  public function getLockKeyName($name) {
+    return 'lock:' . $name;
   }
 }

@@ -26,6 +26,13 @@ abstract class AbstractRedisLockingUnitTestCase extends DrupalUnitTestCase {
   protected $lockBackendClass = false;
 
   /**
+   * Ensure lock flush at tear down.
+   *
+   * @var array
+   */
+  protected $backends = array();
+
+  /**
    * Set up the Redis configuration.
    *
    * Set up the needed variables using variable_set() if necessary.
@@ -45,13 +52,23 @@ abstract class AbstractRedisLockingUnitTestCase extends DrupalUnitTestCase {
     parent::setUp();
   }
 
+  public function tearDown() {
+    if (!empty($this->backends)) {
+      foreach ($this->backends as $backend) {
+        $backend->lockReleaseAll();
+      }
+      $this->backends = array();
+    }
+    parent::tearDown();
+  }
+
   /**
    * Create a new lock backend with a generated lock id
    *
    * @return Redis_Lock_Backend_Interface
    */
   public function createLockBackend() {
-    return new $this->lockBackendClass();
+    return $this->backends[] = new $this->lockBackendClass();
   }
 
   public function testLock() {
@@ -69,7 +86,7 @@ abstract class AbstractRedisLockingUnitTestCase extends DrupalUnitTestCase {
     $s = $b1->lockAcquire('test1', 20000);
     $this->assertTrue($s, "Lock test1 acquired a second time by the same thread");
 
-    $s = $b2->lockAcquire('test1');
+    $s = $b2->lockAcquire('test1', 20000);
     $this->assertFalse($s, "Lock test1 could not be acquired by another thread");
 
     $b2->lockRelease('test1');
@@ -102,11 +119,11 @@ abstract class AbstractRedisLockingUnitTestCase extends DrupalUnitTestCase {
     $b1->lockReleaseAll();
 
     $s = $b2->lockAcquire('test1');
-    $this->assertFalse($s, "Lock test1 has been released");
+    $this->assertTrue($s, "Lock test1 has been released");
     $s = $b2->lockAcquire('test2');
-    $this->assertFalse($s, "Lock test2 has been released");
+    $this->assertTrue($s, "Lock test2 has been released");
     $s = $b2->lockAcquire('test3');
-    $this->assertFalse($s, "Lock test3 has been released");
+    $this->assertTrue($s, "Lock test3 has been released");
 
     $b2->lockReleaseAll();
   }

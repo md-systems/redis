@@ -46,7 +46,8 @@ abstract class AbstractRedisLockingUnitTestCase extends DrupalUnitTestCase {
     // First ensures that Redis is available.
     $this->lockBackendClass = $this->getLockBackendClass();
 
-    // This may work only with PHP 5.3
+    // This will fail with PHP 5.3 due to the non existing prepend parameter
+    // that was added in PHP 5.3.0.
     spl_autoload_register('redis_test_autoload', NULL, TRUE);
 
     parent::setUp();
@@ -186,6 +187,8 @@ class PredisLockingUnitTestCase extends AbstractRedisLockingUnitTestCase {
       return FALSE;
     }, NULL, TRUE);
 
+    variable_set('redis_client_interface', 'Predis');
+
     return 'Redis_Lock_Backend_Predis';
   }
 }
@@ -204,7 +207,8 @@ class PhpRedisLockingUnitTestCase extends AbstractRedisLockingUnitTestCase {
   }
 
   protected function getLockBackendClass() {
-    if (extension_loaded('phpredis') && class_exists('Redis')) {
+    if (extension_loaded('redis') && class_exists('Redis')) {
+      variable_set('redis_client_interface', 'PhpRedis');
       return 'Redis_Lock_Backend_PhpRedis';
     } else {
       return false;

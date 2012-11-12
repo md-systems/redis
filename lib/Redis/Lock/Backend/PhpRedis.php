@@ -26,7 +26,7 @@ class Redis_Lock_Backend_PhpRedis extends Redis_Lock_Backend_Default {
       // and another process could have taken it, check that.
       if ($client->get($key) != $id) {
         // Explicit UNWATCH we are not going to run the MULTI/EXEC block.
-        $client->unwatch($key);
+        $client->unwatch();
         unset($this->_locks[$name]);
         return FALSE;
       }
@@ -49,7 +49,7 @@ class Redis_Lock_Backend_PhpRedis extends Redis_Lock_Backend_Default {
 
       // If the $key is set they lock is not available
       if ($client->get($key)) {
-        $client->unwatch($key);
+        $client->unwatch();
         return FALSE;
       }
       $result = $client
@@ -98,7 +98,7 @@ class Redis_Lock_Backend_PhpRedis extends Redis_Lock_Backend_Default {
       $client->exec();
     }
     else {
-      $client->unwatch($key);
+      $client->unwatch();
     }
   }
 

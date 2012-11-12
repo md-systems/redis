@@ -166,3 +166,13 @@ be faster than the default SQL based one when using both servers on the same box
 
 Both backends, thanks to the Redis WATCH, MULTI and EXEC commands provides a
 real race condition free mutexes if you use Redis >= 2.1.0.
+
+Testing
+=======
+
+Due to Drupal unit testing API being incredibly stupid, the unit tests can only
+work with PHP >=5.3 while the module will work gracefully with PHP 5.2 (at least
+using the PhpRedis client).
+
+I did not find any hint about making tests being configurable, so per default
+the tested Redis server must always be on localhost with default configuration.

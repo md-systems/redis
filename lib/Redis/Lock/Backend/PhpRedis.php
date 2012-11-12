@@ -108,7 +108,7 @@ class Redis_Lock_Backend_PhpRedis extends Redis_Lock_Backend_Default {
   }
 
   public function lockReleaseAll($lock_id = NULL) {
-    if (!isset($lock_id) && empty($locks)) {
+    if (!isset($lock_id) && empty($this->_locks)) {
       return;
     }
 

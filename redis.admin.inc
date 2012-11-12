@@ -68,7 +68,7 @@ function redis_settings_form($form, &$form_state) {
  */
 function redis_settings_form_submit_clean_values($form, &$form_state) {
 
-  $string_values = array('redis_client_host');
+  $string_values = array('redis_client_host', 'redis_client_interface');
 
   foreach ($string_values as $name) {
     // Empty check is sufficient to verify that the field is indeed empty.

@@ -17,17 +17,17 @@ class Redis_Client_Predis implements Redis_Client_Interface {
    * file silentely (WTF!?). By delaying this at the getClient() call we
    * ensure we are not in the class loading process anymore.
    */
-  protected static function setPredisAutoload() {
-    if (!class_exists('Predis::Client')) {
+  public static function setPredisAutoload() {
+    if (!class_exists('Predis\Client')) {
       if (!defined('PREDIS_BASE_PATH')) {
-        $search = DRUPAL_ROOT . '/sites/all/libraries/predis/lib/';    
+        $search = DRUPAL_ROOT . '/sites/all/libraries/predis/lib/';
         if (is_dir($search)) {
           define('PREDIS_BASE_PATH', $search);
         } else {
           throw new Exception("PREDIS_BASE_PATH constant must be set, Predis library must live in sites/all/libraries/predis.");
         }
       }
-    
+
       if (class_exists('AutoloadEarly')) {
         AutoloadEarly::getInstance()->registerNamespace('Predis', PREDIS_BASE_PATH);
       } else {

@@ -46,12 +46,14 @@ class Redis_Lock_Backend_PhpRedis extends Redis_Lock_Backend_Default {
     }
     else {
       $client->watch($key);
+      $owner = $client->get($key);
 
       // If the $key is set they lock is not available
-      if ($client->get($key)) {
+      if (!empty($owner) && $id != $owner) {
         $client->unwatch();
         return FALSE;
       }
+
       $result = $client
         ->multi()
         ->setex($key, $timeout, $id)
@@ -67,6 +69,7 @@ class Redis_Lock_Backend_PhpRedis extends Redis_Lock_Backend_Default {
       // Register the lock.
       return ($this->_locks[$name] = TRUE);
     }
+
     return FALSE;
   }
 

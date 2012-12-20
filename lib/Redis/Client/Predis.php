@@ -4,6 +4,12 @@
  * Predis client specific implementation.
  */
 class Redis_Client_Predis implements Redis_Client_Interface {
+
+  /**
+   * Circular depedency breaker.
+   */
+  static protected $autoloaderRegistered = false;
+
   /**
    * Define Predis base path if not already set, and if we need to set the
    * autoloader by ourself. This will ensure no crash. Best way would have
@@ -18,7 +24,23 @@ class Redis_Client_Predis implements Redis_Client_Interface {
    * ensure we are not in the class loading process anymore.
    */
   public static function setPredisAutoload() {
+
+    if (self::$autoloaderRegistered) {
+      return;
+    } else {
+      self::$autoloaderRegistered = true;
+    }
+
+    // If you attempt to set Drupal's bin cache_bootstrap using Redis, you
+    // will experience an infinite loop (breaking by itself the second time
+    // it passes by): the following call will wake up autoloaders (and we
+    // want that to work since user may have set its own autoloader) but
+    // will wake up Drupal's one too, and because Drupal core caches its
+    // file map, this will trigger this method to be called a second time
+    // and boom! Adios bye bye. That's why this will be called early in the
+    // 'redis.autoload.inc' file instead.
     if (!class_exists('Predis\Client')) {
+
       if (!defined('PREDIS_BASE_PATH')) {
         $search = DRUPAL_ROOT . '/sites/all/libraries/predis/lib/';
         if (is_dir($search)) {
@@ -33,16 +55,12 @@ class Redis_Client_Predis implements Redis_Client_Interface {
       } else {
         // Register a simple autoloader for Predis library. Since the Predis
         // library is PHP 5.3 only, we can afford doing closures safely.
-        spl_autoload_register(function($class_name) {
-          $parts = explode('\\', $class_name);
-          if ('Predis' === $parts[0]) {
-            $filename = PREDIS_BASE_PATH . implode('/', $parts) . '.php';
-            if (file_exists($filename)) {
-              require_once $filename;
-              return TRUE;
-            }
+        spl_autoload_register(function($classname) {
+          if (0 === strpos($classname, 'Predis\\')) {
+            $filename = PREDIS_BASE_PATH . str_replace('\\', '/', $classname) . '.php';
+            return (bool)require_once $filename;
           }
-          return FALSE;
+          return false;
         });
       }
     }
@@ -61,9 +79,13 @@ class Redis_Client_Predis implements Redis_Client_Interface {
       }
     }
 
-    self::setPredisAutoload();
+    // I'm not sure why but the error handler is driven crazy if timezone
+    // is not set at this point.
+    // Hopefully Drupal will restore the right one this once the current
+    // account has logged in.
+    date_default_timezone_set(@date_default_timezone_get());
 
-    $client = new Predis\Client($connectionInfo);
+    $client = new \Predis\Client($connectionInfo);
 
     if (isset($password)) {
       $client->auth($password);

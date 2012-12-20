@@ -27,7 +27,11 @@ class Redis_Cache implements DrupalCacheInterface {
   }
 
   function clear($cid = NULL, $wildcard = FALSE) {
-    $this->backend->clear($cid, $wildcard);
+    // This function also accepts arrays, thus handle everything like an array.
+    $cids = is_array($cid) ? $cid : array($cid);
+    foreach ($cids as $cid) {
+      $this->backend->clear($cid, $wildcard);
+    }
   }
 
   function isEmpty() {

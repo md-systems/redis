@@ -39,7 +39,19 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
     foreach ($replies as $reply) {
       if (!empty($reply)) {
 
-        $cache = (object)$reply;
+        // HGETALL signature seems to differ depending on Predis versions.
+        // This was found just after Predis update. Even though I'm not sure
+        // this comes from Predis or just because we're misusing it.
+        // FIXME: Needs some investigation.
+        if (!isset($reply['cid'])) {
+          $cache = new stdClass();
+          $size = count($reply);
+          for ($i = 0; $i < $size; ++$i) {
+            $cache->{$reply[$i]} = $reply[++$i];
+          }
+        } else {
+          $cache = (object)$reply;
+        }
 
         if ($cache->serialized) {
           $cache->data = unserialize($cache->data);

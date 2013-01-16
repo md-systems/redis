@@ -68,6 +68,7 @@ class Redis_Client_Predis implements Redis_Client_Interface {
 
   public function getClient($host = NULL, $port = NULL, $base = NULL, $password = NULL) {
     $connectionInfo = array(
+      'password' => $password,
       'host'     => $host,
       'port'     => $port,
       'database' => $base
@@ -86,10 +87,6 @@ class Redis_Client_Predis implements Redis_Client_Interface {
     date_default_timezone_set(@date_default_timezone_get());
 
     $client = new \Predis\Client($connectionInfo);
-
-    if (isset($password)) {
-      $client->auth($password);
-    }
 
     return $client;
   }

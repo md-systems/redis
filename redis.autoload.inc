@@ -40,6 +40,6 @@ else {
 }
 
 // See comment in called method. This is very important.
-if ('Predis' === $GLOBALS['conf']['redis_client_interface']) {
+if (isset($GLOBALS['conf']['redis_client_interface']) && 'Predis' === $GLOBALS['conf']['redis_client_interface']) {
   Redis_Client_Predis::setPredisAutoload();
 }

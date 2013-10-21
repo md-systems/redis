@@ -50,6 +50,10 @@ Add into your settings.php file:
 
 You can replace 'PhpRedis' with 'Predis', depending on the library you chose. 
 
+Note that this is optionnal but recommended. If you don't set this variable the
+module will proceed to class lookups and attempt to choose the best client
+available, having always a preference for the Predis one.
+
 Tell Drupal to use the cache backend
 ------------------------------------
 

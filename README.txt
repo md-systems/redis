@@ -38,6 +38,14 @@ Difference is not that visible, it's really a few millisec on my testing box.
 
 Note that most of the settings are shared. See next sections.
 
+Important notice
+----------------
+
+This module only supports Redis >= 2.4 due to the missing WATCH command in
+Redis <= 2.2. Using it with older versions is untested, might work but might
+also cause you serious trouble. Any bug report raised using such version will
+be ignored.
+
 Install
 =======
 

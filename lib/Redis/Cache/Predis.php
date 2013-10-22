@@ -95,29 +95,29 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
 
       switch ($expire) {
 
-        // FIXME: Handle CACHE_TEMPORARY correctly.
         case CACHE_TEMPORARY:
+          $pipe->expire($key, variable_get('cache_lifetime', 0));
+          break;
+
         case CACHE_PERMANENT:
           // We dont need the PERSIST command, since it's the default.
           break;
 
         default:
-          $delay = $expire - time();
-          $pipe->expire($key, $delay);
+          // If caller gives us an expiry timestamp in the past
+          // the key will expire now and will never be read.
+          $pipe->expire($key, $expire - time());
+          break;
       }
     });
   }
 
   function clear($cid = NULL, $wildcard = FALSE) {
-    $client = Redis_Client::getClient();
-    $many   = FALSE;
+    $many = FALSE;
 
-    // We cannot determine which keys are going to expire, so we need to flush
-    // the full bin case we have an explicit NULL provided. This means that
-    // stuff like block and cache pages may be expired too often.
     if (NULL === $cid) {
-      $key = $this->getKey('*');
-      $many = TRUE;
+      // Do nothing. Redis expires things on its own.
+      return;
     }
     else if ('*' !== $cid && $wildcard) {
       $key  = $this->getKey($cid . '*');
@@ -130,6 +130,8 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
     else {
       $key = $this->getKey($cid);
     }
+
+    $client = Redis_Client::getClient();
 
     if ($many) {
       $keys = $client->keys($key);

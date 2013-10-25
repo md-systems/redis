@@ -96,11 +96,15 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
       switch ($expire) {
 
         case CACHE_TEMPORARY:
-          $pipe->expire($key, variable_get('cache_lifetime', 0));
+          $lifetime = variable_get('cache_lifetime', 0);
+          if (0 < $lifetime) {
+            $pipe->expire($key, $lifetime);
+          }
           break;
 
         case CACHE_PERMANENT:
-          // We dont need the PERSIST command, since it's the default.
+          // We dont need the PERSIST command we want the cache item to
+          // never expire.
           break;
 
         default:

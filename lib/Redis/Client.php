@@ -163,5 +163,13 @@ class Redis_Client {
 
     return $className;
   }
+
+  /**
+   * For unit testing only reset internals.
+   */
+  static public function reset() {
+    self::$_clientInterface = null;
+    self::$_client = null;
+  }
 }
 

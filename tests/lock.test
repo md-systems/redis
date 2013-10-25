@@ -2,16 +2,13 @@
 
 function redis_test_autoload($class_name) {
   $parts = explode('_', $class_name);
-
   if ('Redis' === $parts[0]) {
     $filename = REDIS_ROOT . '/' . implode('/', $parts) . '.php';
-
     if (file_exists($filename)) {
       require_once $filename;
       return TRUE;
     }
   }
-
   return FALSE;
 }
 

@@ -155,11 +155,19 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
 
     if ('*' !== $cid && $wildcard) {
       // Prefix flush.
-      $keys += $client->keys($this->getKey($cid . '*'));
+      $remoteKeys = $client->keys($this->getKey($cid . '*'));
+      // PhpRedis seems to suffer of some bugs.
+      if (!empty($remoteKeys) && is_array($remoteKeys)) {
+        $keys += $remoteKeys;
+      }
     }
     else if ('*' === $cid) {
       // Full bin flush.
-      $keys += $client->keys($this->getKey('*'));
+      $remoteKeys = $client->keys($this->getKey('*'));
+      // PhpRedis seems to suffer of some bugs.
+      if (!empty($remoteKeys) && is_array($remoteKeys)) {
+        $keys += $remoteKeys;
+      }
     }
     else if (empty($keys) && !empty($cid)) {
       // Single key drop.

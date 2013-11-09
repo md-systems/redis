@@ -6,12 +6,16 @@
 class Redis_Cache_PhpRedis extends Redis_Cache_Base {
 
   function get($cid) {
-    $client     = Redis_Client::getClient();
-    $key        = $this->getKey($cid);
+
+    $client = Redis_Client::getClient();
+    $key    = $this->getKey($cid);
 
     $cached = $client->hgetall($key);
 
-    if (empty($cached)) {
+    // Recent versions of PhpRedis will return the Redis instance
+    // instead of an empty array when the HGETALL target key does
+    // not exists. I see what you did there.
+    if (empty($cached) || !is_array($cached)) {
       return FALSE;
     }
 
@@ -25,6 +29,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
   }
 
   function getMultiple(&$cids) {
+
     $client = Redis_Client::getClient();
 
     $ret = array();
@@ -58,7 +63,9 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
   }
 
   function set($cid, $data, $expire = CACHE_PERMANENT) {
+
     $client = Redis_Client::getClient();
+    $skey   = $this->getKey(Redis_Cache_Base::TEMP_SET);
     $key    = $this->getKey($cid);
 
     $hash = array(
@@ -87,6 +94,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
         if (0 < $lifetime) {
           $pipe->expire($key, $lifetime);
         }
+        $pipe->sadd($skey, $cid);
         break;
 
       case CACHE_PERMANENT:
@@ -96,14 +104,15 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
       default:
         // If caller gives us an expiry timestamp in the past
         // the key will expire now and will never be read.
-        $lifetime = $expire - time();
-        if ($lifetime < 0) {
+        $ttl = $expire - time();
+        if ($ttl < 0) {
           // Behavior between Predis and PhpRedis seems to change here: when
           // setting a negative expire time, PhpRedis seems to ignore the
           // command and leave the key permanent.
           $pipe->expire($key, 0);
         } else {
-          $pipe->expire($key, $lifetime);
+          $pipe->expire($key, $ttl);
+          $pipe->sadd($skey, $cid);
         }
         break;
     }
@@ -112,36 +121,62 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
   }
 
   function clear($cid = NULL, $wildcard = FALSE) {
-    $many = FALSE;
 
-    if (NULL === $cid) {
-      // Do nothing. Redis expires things on its own.
-      return;
-    }
-    else if ('*' !== $cid && $wildcard) {
-      $key  = $this->getKey($cid . '*');
-      $many = TRUE;
-    }
-    else if ('*' === $cid) {
-      $key  = $this->getKey($cid);
-      $many = TRUE;
-    }
-    else {
-      $key = $this->getKey($cid);
-    }
-
+    $keys   = array();
+    $skey   = $this->getKey(Redis_Cache_Base::TEMP_SET);
     $client = Redis_Client::getClient();
 
-    if ($many) {
-      $keys = $client->keys($key);
+    if (NULL === $cid) {
+      switch ($this->getClearMode()) {
 
-      // Attempt to clear an empty array will raise exceptions.
-      if (!empty($keys)) {
-        $client->del($keys);
+        // One and only case of early return.
+        case Redis_Cache_Base::FLUSH_NOTHING:
+          return;
+
+        // Default behavior.
+        case Redis_Cache_Base::FLUSH_TEMPORARY:
+          if (0 == variable_get('cache_lifetime')) {
+            $keys[] = $skey;
+            foreach ($client->smembers($skey) as $tcid) {
+              $keys[] = $this->getKey($tcid);
+            }
+          }
+          break;
+
+        // Fallback on most secure mode: flush full bin.
+        default:
+        case Redis_Cache_Base::FLUSH_ALL:
+          $keys[] = $skey;
+          $cid = '*';
+          $wildcard = true;
+          break;
       }
     }
-    else {
-      $client->del(array($key));
+
+    if ('*' !== $cid && $wildcard) {
+      // Prefix flush.
+      $keys += $client->keys($this->getKey($cid . '*'));
+    }
+    else if ('*' === $cid) {
+      // Full bin flush.
+      $keys += $client->keys($this->getKey('*'));
+    }
+    else if (empty($keys) && !empty($cid)) {
+      // Single key drop.
+      $keys[] = $key = $this->getKey($cid);
+      $client->srem($skey, $key);
+    }
+
+    if (!empty($keys)) {
+      if (count($keys) < Redis_Cache_Base::KEY_THRESHOLD) {
+        $client->del($keys);
+      } else {
+        $pipe = $client->multi(Redis::PIPELINE);
+        do {
+          $buffer = array_splice($keys, 0, Redis_Cache_Base::KEY_THRESHOLD);
+          $pipe->del($buffer);
+        } while (!empty($keys));
+      }
     }
   }
 

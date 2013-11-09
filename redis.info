@@ -6,4 +6,5 @@ core = 7.x
 configure = admin/config/development/performance/redis
 files[] = tests/admin_variables.test
 files[] = tests/fixes.test
+files[] = tests/flush.test
 files[] = tests/lock.test

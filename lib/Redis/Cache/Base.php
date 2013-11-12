@@ -10,6 +10,16 @@
 abstract class Redis_Cache_Base implements DrupalCacheInterface
 {
   /**
+   * Temporary cache items lifetime is infinite.
+   */
+  const LIFETIME_INFINITE = 0;
+
+  /**
+   * Default temporary cache items lifetime.
+   */
+  const LIFETIME_DEFAULT = 0;
+
+  /**
    * Flush nothing on generic clear().
    *
    * Because Redis handles keys TTL by itself we don't need to pragmatically
@@ -133,10 +143,10 @@ abstract class Redis_Cache_Base implements DrupalCacheInterface
       $this->prefix = $prefix;
     }
 
-    if (null !== ($mode = variable_get('redis_flush_mode_' . $this->bin))) {
+    if (null !== ($mode = variable_get('redis_flush_mode_' . $this->bin, null))) {
       // A bin specific flush mode has been set.
       $this->clearMode = (int)$mode;
-    } else if (null !== ($mode = variable_get('redis_flush_mode'))) {
+    } else if (null !== ($mode = variable_get('redis_flush_mode', null))) {
       // A site wide generic flush mode has been set.
       $this->clearMode = (int)$mode;
     } else {

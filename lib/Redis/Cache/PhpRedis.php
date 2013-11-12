@@ -90,7 +90,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
     switch ($expire) {
 
       case CACHE_TEMPORARY:
-        $lifetime = variable_get('cache_lifetime', 0);
+        $lifetime = variable_get('cache_lifetime', Redis_Cache_Base::LIFETIME_DEFAULT);
         if (0 < $lifetime) {
           $pipe->expire($key, $lifetime);
         }
@@ -135,7 +135,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
 
         // Default behavior.
         case Redis_Cache_Base::FLUSH_TEMPORARY:
-          if (0 == variable_get('cache_lifetime')) {
+          if (Redis_Cache_Base::LIFETIME_INFINITE == variable_get('cache_lifetime', Redis_Cache_Base::LIFETIME_DEFAULT)) {
             $keys[] = $skey;
             foreach ($client->smembers($skey) as $tcid) {
               $keys[] = $this->getKey($tcid);

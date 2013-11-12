@@ -7,7 +7,8 @@
  * For a detailed history of flush modes see:
  *   https://drupal.org/node/1980250
  */
-abstract class Redis_Cache_Base implements DrupalCacheInterface
+abstract class Redis_Cache_Base extends Redis_AbstractBackend implements
+    DrupalCacheInterface
 {
   /**
    * Temporary cache items lifetime is infinite.
@@ -69,11 +70,6 @@ abstract class Redis_Cache_Base implements DrupalCacheInterface
   protected $bin;
 
   /**
-   * @var string
-   */
-  protected $prefix;
-
-  /**
    * @var int
    */
   protected $clearMode = self::FLUSH_TEMPORARY;
@@ -88,60 +84,11 @@ abstract class Redis_Cache_Base implements DrupalCacheInterface
     return $this->clearMode;
   }
 
-  /**
-   * Get prefix for bin using the configuration.
-   * 
-   * @param string $bin
-   * 
-   * @return string
-   *   Can be an empty string, if no prefix set.
-   */
-  protected static function getPrefixForBin($bin) {
-    if (isset($GLOBALS['drupal_test_info']) && !empty($test_info['test_run_id'])) {
-      return $test_info['test_run_id'];
-    } else {
-      $prefixes = variable_get('cache_prefix', '');
+  public function __construct($bin) {
 
-      if (is_string($prefixes)) {
-        // Variable can be a string, which then considered as a default behavior.
-        return $prefixes;
-      }
+    parent::__construct();
 
-      if (isset($prefixes[$bin])) {
-        if (FALSE !== $prefixes[$bin]) {
-          // If entry is set and not FALSE, an explicit prefix is set for the bin.
-          return $prefixes[$bin];
-        } else {
-          // If we have an explicit false, it means no prefix whatever is the
-          // default configuration.
-          return '';
-        }
-      } else {
-        // Key is not set, we can safely rely on default behavior.
-        if (isset($prefixes['default']) && FALSE !== $prefixes['default']) {
-          return $prefixes['default'];
-        } else {
-          // When default is not set or an explicit FALSE, this means no prefix.
-          return '';
-        }
-      }
-    }
-  }
-
-  function __construct($bin) {
     $this->bin = $bin;
-
-    $prefix = self::getPrefixForBin($this->bin);
-
-    if (empty($prefix) && isset($_SERVER['HTTP_HOST'])) {
-      // Provide a fallback for multisite. This is on purpose not inside the
-      // getPrefixForBin() function in order to decouple the unified prefix
-      // variable logic and custom module related security logic, that is not
-      // necessary for all backends.
-      $this->prefix = $_SERVER['HTTP_HOST'] . '_';
-    } else {
-      $this->prefix = $prefix;
-    }
 
     if (null !== ($mode = variable_get('redis_flush_mode_' . $this->bin, null))) {
       // A bin specific flush mode has been set.
@@ -167,7 +114,11 @@ abstract class Redis_Cache_Base implements DrupalCacheInterface
     }
   }
 
-  protected function getKey($cid) {
-    return $this->prefix . $this->bin . ':' . $cid;
+  public function getKey($cid = null) {
+    if (null === $cid) {
+      return parent::getKey($this->bin);
+    } else {
+      return parent::getKey($this->bin . ':' . $cid);
+    }
   }
 }

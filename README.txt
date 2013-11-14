@@ -81,6 +81,18 @@ Usual lock backend override, update you settings.php file as this:
 
   $conf['lock_inc'] = 'sites/all/modules/redis/redis.lock.inc';
 
+Drupal 6 and lock backend
+-------------------------
+
+Considering this is a Drupal 7 module only downloading it in Drupal 6 will make
+the module UI telling you this module is unsupported yet you can use the lock
+backend on Drupal 6.
+
+Read your Drupal 6 core documentation and use the redis.lock.inc file as
+lock_inc replacement the same way its being done for Drupal 7 and it should
+work. Note that this is untested by the module maintainer (feedback will be
+greatly appreciated).
+
 Common settings
 ===============
 

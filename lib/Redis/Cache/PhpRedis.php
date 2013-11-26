@@ -184,6 +184,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
           $buffer = array_splice($keys, 0, Redis_Cache_Base::KEY_THRESHOLD);
           $pipe->del($buffer);
         } while (!empty($keys));
+        $client->exec();
       }
     }
   }

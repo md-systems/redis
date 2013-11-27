@@ -98,6 +98,9 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
         break;
 
       case CACHE_PERMANENT:
+        if (0 !== ($ttl = $this->getPermTtl())) {
+          $pipe->expire($key, $ttl);
+        }
         // We dont need the PERSIST command, since it's the default.
         break;
 
@@ -158,7 +161,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
       $remoteKeys = $client->keys($this->getKey($cid . '*'));
       // PhpRedis seems to suffer of some bugs.
       if (!empty($remoteKeys) && is_array($remoteKeys)) {
-        $keys += $remoteKeys;
+        $keys = array_merge($keys, $remoteKeys);
       }
     }
     else if ('*' === $cid) {
@@ -166,7 +169,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
       $remoteKeys = $client->keys($this->getKey('*'));
       // PhpRedis seems to suffer of some bugs.
       if (!empty($remoteKeys) && is_array($remoteKeys)) {
-        $keys += $remoteKeys;
+        $keys = array_merge($keys, $remoteKeys);
       }
     }
     else if (empty($keys) && !empty($cid)) {
@@ -184,7 +187,7 @@ class Redis_Cache_PhpRedis extends Redis_Cache_Base {
           $buffer = array_splice($keys, 0, Redis_Cache_Base::KEY_THRESHOLD);
           $pipe->del($buffer);
         } while (!empty($keys));
-        $client->exec();
+        $pipe->exec();
       }
     }
   }

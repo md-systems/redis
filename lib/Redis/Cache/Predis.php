@@ -76,8 +76,9 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
     $client = Redis_Client::getClient();
     $skey   = $this->getKey(Redis_Cache_Base::TEMP_SET);
     $key    = $this->getKey($cid);
+    $self   = $this;
 
-    $client->pipeline(function($pipe) use ($cid, $key, $skey, $data, $expire) {
+    $client->pipeline(function($pipe) use ($cid, $key, $skey, $data, $expire, $self) {
 
       $hash = array(
         'cid' => $cid,
@@ -107,6 +108,9 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
           break;
 
         case CACHE_PERMANENT:
+          if (0 !== ($ttl = $self->getPermTtl())) {
+            $pipe->expire($key, $ttl);
+          }
           // We dont need the PERSIST command we want the cache item to
           // never expire.
           break;
@@ -159,11 +163,11 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
 
     if ('*' !== $cid && $wildcard) {
       // Prefix flush.
-      $keys += $client->keys($this->getKey($cid . '*'));
+      $keys = array_merge($keys, $client->keys($this->getKey($cid . '*')));
     }
     else if ('*' === $cid) {
       // Full bin flush.
-      $keys += $client->keys($this->getKey('*'));
+      $keys = array_merge($keys, $client->keys($this->getKey('*')));
     }
     else if (empty($keys) && !empty($cid)) {
       // Single key drop.

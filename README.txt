@@ -228,6 +228,59 @@ convention requires it.
 Keep in mind that defaults will provide the best balance between performance
 and safety for most sites; Non advanced users should ever change them.
 
+Default lifetime for permanent items
+------------------------------------
+
+Redis when reaching its maximum memory limit will stop writing data in its
+storage engine: this is a feature that avoid the Redis server crashing when
+there is no memory left on the machine.
+
+As a workaround, Redis can be configured as a LRU cache for both volatile or
+permanent items, which means it can behave like Memcache; Problem is that if
+you use Redis as a permanent storage for other business matters than this
+module you cannot possibly configure it to drop permanent items or you'll
+loose data.
+
+This workaround allows you to explicity set a very long or configured default
+lifetime for CACHE_PERMANENT items (that would normally be permanent) which
+will mark them as being volatile in Redis storage engine: this then allows you
+to configure a LRU behavior for volatile keys without engaging the permenent
+business stuff in a dangerous LRU mechanism; Cache items even if permament will
+be dropped when unused using this.
+
+Per default the TTL for permanent items will set to safe-enough value which is
+one year; No matter how Redis will be configured default configuration or lazy
+admin will inherit from a safe module behavior with zero-conf.
+
+For advanturous people, you can manage the TTL on a per bin basis and change
+the default one:
+
+    // Make CACHE_PERMANENT items being permanent once again
+    // 0 is a special value usable for all bins to explicitely tell the
+    // cache items will not be volatile in Redis.
+    $conf['redis_perm_ttl'] = 0;
+
+    // Make them being volatile with a default lifetime of 1 year.
+    $conf['redis_perm_ttl'] = "1 year";
+
+    // You can override on a per-bin basis;
+    // For example make cached field values live only 3 monthes:
+    $conf['redis_perm_ttl_cache_field'] = "3 months";
+
+    // But you can also put a timestamp in there; In this case the
+    // value must be a STRICTLY TYPED integer:
+    $conf['redis_perm_ttl_cache_field'] = 2592000; // 30 days.
+
+Time interval string will be parsed using DateInterval::createFromDateString
+please refer to its documentation:
+
+    http://www.php.net/manual/en/dateinterval.createfromdatestring.php
+
+Last but not least please be aware that this setting affects the
+CACHE_PERMANENT ONLY; All other use cases (CACHE_TEMPORARY or user set TTL
+on single cache entries) will continue to behave as documented in Drupal core
+cache backend documentation.
+
 Lock backends
 -------------
 

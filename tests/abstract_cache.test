@@ -58,9 +58,7 @@ abstract class AbstractRedisCacheUnitTestCase extends DrupalUnitTestCase
 
     public function tearDown()
     {
-        if (!empty($this->backend)) {
-            $this->backend = null;
-        }
+        $this->backend = null;
 
         drupal_uninstall_schema('system');
 

@@ -21,6 +21,12 @@ abstract class Redis_Cache_Base extends Redis_AbstractBackend implements
   const LIFETIME_DEFAULT = 0;
 
   /**
+   * Default lifetime for permanent items.
+   * Approximatively 1 year.
+   */
+  const LIFETIME_PERM_DEFAULT = 31536000;
+
+  /**
    * Flush nothing on generic clear().
    *
    * Because Redis handles keys TTL by itself we don't need to pragmatically
@@ -75,6 +81,16 @@ abstract class Redis_Cache_Base extends Redis_AbstractBackend implements
   protected $clearMode = self::FLUSH_TEMPORARY;
 
   /**
+   * Default TTL for CACHE_PERMANENT items.
+   *
+   * See "Default lifetime for permanent items" section of README.txt
+   * file for a comprehensive explaination of why this exists.
+   *
+   * @var int
+   */
+  protected $permTtl = self::LIFETIME_PERM_DEFAULT;
+
+  /**
    * Get clear mode.
    *
    * @return int
@@ -82,6 +98,16 @@ abstract class Redis_Cache_Base extends Redis_AbstractBackend implements
    */
   public function getClearMode() {
     return $this->clearMode;
+  }
+
+  /**
+   * Get TTL for CACHE_PERMANENT items.
+   *
+   * @return int
+   *   Lifetime in seconds.
+   */
+  public function getPermTtl() {
+    return $this->permTtl;
   }
 
   public function __construct($bin) {
@@ -110,6 +136,25 @@ abstract class Redis_Cache_Base extends Redis_AbstractBackend implements
         default:
           $this->clearMode = self::FLUSH_NOTHING;
           break;
+      }
+    }
+
+    $ttl = null;
+    if (null === ($ttl = variable_get('redis_perm_ttl_' . $this->bin, null))) {
+      if (null === ($ttl = variable_get('redis_perm_ttl', null))) {
+        $ttl = self::LIFETIME_PERM_DEFAULT;
+      }
+    }
+    if ($ttl === (int)$ttl) {
+      $this->permTtl = $ttl;
+    } else {
+      if ($iv = DateInterval::createFromDateString($ttl)) {
+        // http://stackoverflow.com/questions/14277611/convert-dateinterval-object-to-seconds-in-php
+        $this->permTtl = ($iv->y * 31536000 + $iv->m * 2592000 + $iv->days * 86400 + $iv->h * 3600 + $iv->i * 60 + $iv->s);
+      } else {
+        // Sorry but we have to log this somehow.
+        trigger_error(sprintf("Parsed TTL '%s' has an invalid value: switching to default", $ttl));
+        $this->permTtl = self::LIFETIME_PERM_DEFAULT;
       }
     }
   }

@@ -49,6 +49,9 @@ be ignored.
 Getting started
 ===============
 
+Quick setup
+-----------
+
 Here is a simple yet working easy way to setup the module.
 This method will Drupal to use Redis for all caches and locks.
 
@@ -59,6 +62,14 @@ This method will Drupal to use Redis for all caches and locks.
   $conf['cache_default_class']    = 'Redis_Cache';
 
 See next chapters for more information.
+
+Is there any cache bins that should *never* go into Redis?
+----------------------------------------------------------
+
+TL;DR: No.
+
+Redis has been maturing a lot over time, and will apply different sensible
+settings for different bins; It's today very stable.
 
 Advanced configuration
 ======================

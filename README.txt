@@ -46,8 +46,22 @@ Redis <= 2.2. Using it with older versions is untested, might work but might
 also cause you serious trouble. Any bug report raised using such version will
 be ignored.
 
-Install
-=======
+Getting started
+===============
+
+Here is a simple yet working easy way to setup the module.
+This method will Drupal to use Redis for all caches and locks.
+
+  $conf['redis_client_interface'] = 'PhpRedis'; // Can be "Predis".
+  $conf['redis_client_host']      = '1.2.3.4';  // Your Redis instance hostname.
+  $conf['lock_inc']               = 'sites/all/modules/redis/redis.lock.inc';
+  $conf['cache_backends'][]       = 'sites/all/modules/redis/redis.autoload.inc';
+  $conf['cache_default_class']    = 'Redis_Cache';
+
+See next chapters for more information.
+
+Advanced configuration
+======================
 
 Choose the Redis client library to use
 --------------------------------------

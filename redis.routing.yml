@@ -1,0 +1,7 @@
+redis.admin_display:
+  path: '/admin/config/development/performance/redis'
+  defaults:
+    _content: '\Drupal\redis\Form\RedisSettingsForm'
+    _title: 'Redis'
+  requirements:
+    _permission: 'administer site configuration'

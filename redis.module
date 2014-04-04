@@ -8,30 +8,6 @@
  * something else than lock and cache.
  */
 
-// Include our own autoloader to ensure classes to be there.
-// We cannot rely on core in case of early bootstrap phases.
-require_once dirname(__FILE__) . '/redis.autoload.inc';
-
-/**
- * Implements hook_menu().
- */
-function redis_menu() {
-  $items = array();
-  $items['admin/config/development/performance/cache'] = array(
-    'title' => "Cache",
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-  );
-  $items['admin/config/development/performance/redis'] = array(
-    'title' => "Redis",
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('redis_settings_form'),
-    'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
-    'file' => 'redis.admin.inc',
-  );
-  return $items;
-}
-
 /**
  * Implements hook_help().
  */

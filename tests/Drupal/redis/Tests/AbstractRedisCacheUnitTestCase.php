@@ -1,13 +1,11 @@
 <?php
 
-spl_autoload_register(function ($className) {
-    $parts = explode('_', $className);
-    if ('Redis' === $parts[0]) {
-        $filename = __DIR__ . '/../lib/' . implode('/', $parts) . '.php';
-        return (bool) include_once $filename;
-    }
-    return false;
-}, null, true);
+/**
+ * @file
+ * Contains Drupal\redis\Tests\AbstractRedisCacheUnitTestCase.
+ */
+
+namespace Drupal\redis\Tests;
 
 /**
  * Base implementation for locking functionnal testing.

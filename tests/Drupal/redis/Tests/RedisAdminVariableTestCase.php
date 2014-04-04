@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * @file
+ * Contains \Drupal\redis\Tests\RedisAdminVariableTestCase.
+ */
+
+namespace Drupal\redis\Tests;
+
 class RedisAdminVariableTestCase extends DrupalWebTestCase {
 
   public static function getInfo() {

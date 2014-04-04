@@ -8,13 +8,18 @@
 namespace Drupal\redis\Cache;
 
 use Drupal\redis\CacheBase;
+use Drupal\redis\ClientFactory;
+use Drupal\Core\Cache\Cache;
 
 /**
  * PhpRedis cache backend.
  */
 class PhpRedis extends CacheBase {
 
-  function get($cid) {
+  /**
+   * {@inheritdoc}
+   */
+  public function get($cid, $allow_invalid = FALSE) {
 
     $client = ClientFactory::getClient();
     $key    = $this->getKey($cid);
@@ -37,14 +42,17 @@ class PhpRedis extends CacheBase {
     return $cached;
   }
 
-  function getMultiple(&$cids) {
+  /**
+   * {@inheritdoc}
+   */
+  public function getMultiple(&$cids, $allow_invalid = FALSE) {
 
     $client = ClientFactory::getClient();
 
     $ret = array();
     $keys = array_map(array($this, 'getKey'), $cids);
 
-    $pipe = $client->multi(Redis::PIPELINE);
+    $pipe = $client->multi(\Redis::PIPELINE);
     foreach ($keys as $key) {
       $pipe->hgetall($key);
     }
@@ -71,10 +79,15 @@ class PhpRedis extends CacheBase {
     return $ret;
   }
 
-  function set($cid, $data, $expire = CACHE_PERMANENT) {
+  /**
+   * {@inheritdoc}
+   *
+   * @todo: Add tags to a special hash (tag -> cid)
+   */
+  public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
 
     $client = ClientFactory::getClient();
-    $skey   = $this->getKey(Redis_Cache_Base::TEMP_SET);
+    $skey   = $this->getKey(CacheBase::TEMP_SET);
     $key    = $this->getKey($cid);
 
     $hash = array(
@@ -93,20 +106,20 @@ class PhpRedis extends CacheBase {
       $hash['serialized'] = 0;
     }
 
-    $pipe = $client->multi(Redis::PIPELINE);
+    $pipe = $client->multi(\Redis::PIPELINE);
     $pipe->hmset($key, $hash);
 
     switch ($expire) {
 
-      case CACHE_TEMPORARY:
-        $lifetime = variable_get('cache_lifetime', Redis_Cache_Base::LIFETIME_DEFAULT);
-        if (0 < $lifetime) {
-          $pipe->expire($key, $lifetime);
-        }
-        $pipe->sadd($skey, $cid);
-        break;
+//      case CACHE_TEMPORARY:
+//        $lifetime = variable_get('cache_lifetime', CacheBase::LIFETIME_DEFAULT);
+//        if (0 < $lifetime) {
+//          $pipe->expire($key, $lifetime);
+//        }
+//        $pipe->sadd($skey, $cid);
+//        break;
 
-      case CACHE_PERMANENT:
+      case Cache::PERMANENT:
         if (0 !== ($ttl = $this->getPermTtl())) {
           $pipe->expire($key, $ttl);
         }
@@ -132,68 +145,73 @@ class PhpRedis extends CacheBase {
     $pipe->exec();
   }
 
-  function clear($cid = NULL, $wildcard = FALSE) {
-
+  /**
+   * {@inheritdoc}
+   */
+  public function delete($cid) {
     $keys   = array();
-    $skey   = $this->getKey(Redis_Cache_Base::TEMP_SET);
+    $skey   = $this->getKey(CacheBase::TEMP_SET);
     $client = ClientFactory::getClient();
 
-    if (NULL === $cid) {
-      switch ($this->getClearMode()) {
+    // Single key drop.
+    $keys[] = $key = $this->getKey($cid);
+    $client->srem($skey, $key);
 
-        // One and only case of early return.
-        case Redis_Cache_Base::FLUSH_NOTHING:
-          return;
-
-        // Default behavior.
-        case Redis_Cache_Base::FLUSH_TEMPORARY:
-          if (Redis_Cache_Base::LIFETIME_INFINITE == variable_get('cache_lifetime', Redis_Cache_Base::LIFETIME_DEFAULT)) {
-            $keys[] = $skey;
-            foreach ($client->smembers($skey) as $tcid) {
-              $keys[] = $this->getKey($tcid);
-            }
-          }
-          break;
-
-        // Fallback on most secure mode: flush full bin.
-        default:
-        case Redis_Cache_Base::FLUSH_ALL:
-          $keys[] = $skey;
-          $cid = '*';
-          $wildcard = true;
-          break;
-      }
+    if (count($keys) < CacheBase::KEY_THRESHOLD) {
+      $client->del($keys);
+    } else {
+      $pipe = $client->multi(\Redis::PIPELINE);
+      do {
+        $buffer = array_splice($keys, 0, CacheBase::KEY_THRESHOLD);
+        $pipe->del($buffer);
+      } while (!empty($keys));
+      $pipe->exec();
     }
+  }
 
-    if ('*' !== $cid && $wildcard) {
-      // Prefix flush.
-      $remoteKeys = $client->keys($this->getKey($cid . '*'));
-      // PhpRedis seems to suffer of some bugs.
-      if (!empty($remoteKeys) && is_array($remoteKeys)) {
-        $keys = array_merge($keys, $remoteKeys);
-      }
+  /**
+   * {@inheritdoc}
+   *
+   * @todo: implement
+   */
+  public function deleteMultiple(array $cids) {
+    foreach ($cids as $cid) {
+      $this->delete($cid);
     }
-    else if ('*' === $cid) {
-      // Full bin flush.
-      $remoteKeys = $client->keys($this->getKey('*'));
-      // PhpRedis seems to suffer of some bugs.
-      if (!empty($remoteKeys) && is_array($remoteKeys)) {
-        $keys = array_merge($keys, $remoteKeys);
-      }
-    }
-    else if (empty($keys) && !empty($cid)) {
-      // Single key drop.
-      $keys[] = $key = $this->getKey($cid);
-      $client->srem($skey, $key);
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @todo: implement
+   */
+  public function deleteTags(array $tags) {
+    $this->deleteAll();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function deleteAll() {
+    $keys   = array();
+    $skey   = $this->getKey(CacheBase::TEMP_SET);
+    $client = ClientFactory::getClient();
+
+    $keys[] = $skey;
+
+    $remoteKeys = $client->keys($this->getKey('*'));
+    // PhpRedis seems to suffer of some bugs.
+    if (!empty($remoteKeys) && is_array($remoteKeys)) {
+      $keys = array_merge($keys, $remoteKeys);
     }
 
     if (!empty($keys)) {
-      if (count($keys) < Redis_Cache_Base::KEY_THRESHOLD) {
+      if (count($keys) < CacheBase::KEY_THRESHOLD) {
         $client->del($keys);
       } else {
-        $pipe = $client->multi(Redis::PIPELINE);
+        $pipe = $client->multi(\Redis::PIPELINE);
         do {
-          $buffer = array_splice($keys, 0, Redis_Cache_Base::KEY_THRESHOLD);
+          $buffer = array_splice($keys, 0, CacheBase::KEY_THRESHOLD);
           $pipe->del($buffer);
         } while (!empty($keys));
         $pipe->exec();
@@ -201,7 +219,131 @@ class PhpRedis extends CacheBase {
     }
   }
 
+  /**
+   * {@inheritdoc}
+   *
+   * @todo: implement
+   */
+  public function invalidate($cid) {
+    $this->delete($cid);
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @todo: implement
+   */
+  public function invalidateMultiple(array $cids) {
+    $this->deleteMultiple($cids);
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @todo: implement
+   */
+  public function invalidateTags(array $tags) {
+    $this->deleteTags($tags);
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @todo: implement
+   */
+  public function invalidateAll() {
+    $this->deleteAll();
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @todo: implement
+   */
+  public function garbageCollection() {
+  }
+
+  /**
+   * {@inheritdoc}
+   *
+   * @todo: implement
+   */
+  public function removeBin() {
+  }
+
   function isEmpty() {
     // FIXME: Todo.
   }
+
+//  /**
+//   * @todo: Remove this is only here for referenece.
+//   */
+//  function clear($cid = NULL, $wildcard = FALSE) {
+//
+//    $keys   = array();
+//    $skey   = $this->getKey(CacheBase::TEMP_SET);
+//    $client = ClientFactory::getClient();
+//
+//    if (NULL === $cid) {
+//      switch ($this->getClearMode()) {
+//
+//        // One and only case of early return.
+//        case CacheBase::FLUSH_NOTHING:
+//          return;
+//
+//        // Default behavior.
+//        case CacheBase::FLUSH_TEMPORARY:
+//          if (CacheBase::LIFETIME_INFINITE == variable_get('cache_lifetime', CacheBase::LIFETIME_DEFAULT)) {
+//            $keys[] = $skey;
+//            foreach ($client->smembers($skey) as $tcid) {
+//              $keys[] = $this->getKey($tcid);
+//            }
+//          }
+//          break;
+//
+//        // Fallback on most secure mode: flush full bin.
+//        default:
+//        case CacheBase::FLUSH_ALL:
+//          $keys[] = $skey;
+//          $cid = '*';
+//          $wildcard = true;
+//          break;
+//      }
+//    }
+//
+//    if ('*' !== $cid && $wildcard) {
+//      // Prefix flush.
+//      $remoteKeys = $client->keys($this->getKey($cid . '*'));
+//      // PhpRedis seems to suffer of some bugs.
+//      if (!empty($remoteKeys) && is_array($remoteKeys)) {
+//        $keys = array_merge($keys, $remoteKeys);
+//      }
+//    }
+//    else if ('*' === $cid) {
+//      // Full bin flush.
+//      $remoteKeys = $client->keys($this->getKey('*'));
+//      // PhpRedis seems to suffer of some bugs.
+//      if (!empty($remoteKeys) && is_array($remoteKeys)) {
+//        $keys = array_merge($keys, $remoteKeys);
+//      }
+//    }
+//    else if (empty($keys) && !empty($cid)) {
+//      // Single key drop.
+//      $keys[] = $key = $this->getKey($cid);
+//      $client->srem($skey, $key);
+//    }
+//
+//    if (!empty($keys)) {
+//      if (count($keys) < CacheBase::KEY_THRESHOLD) {
+//        $client->del($keys);
+//      } else {
+//        $pipe = $client->multi(\Redis::PIPELINE);
+//        do {
+//          $buffer = array_splice($keys, 0, CacheBase::KEY_THRESHOLD);
+//          $pipe->del($buffer);
+//        } while (!empty($keys));
+//        $pipe->exec();
+//      }
+//    }
+//  }
 }

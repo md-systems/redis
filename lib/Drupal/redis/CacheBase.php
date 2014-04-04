@@ -102,7 +102,7 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
    * Get clear mode.
    *
    * @return int
-   *   One of the Redis_Cache_Base::FLUSH_* constant.
+   *   One of the CacheBase::FLUSH_* constant.
    */
   public function getClearMode() {
     return $this->clearMode;
@@ -124,16 +124,16 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
 
     $this->bin = $bin;
 
-    if (null !== ($mode = variable_get('redis_flush_mode_' . $this->bin, null))) {
-      // A bin specific flush mode has been set.
-      $this->clearMode = (int)$mode;
-    } else if (null !== ($mode = variable_get('redis_flush_mode', null))) {
-      // A site wide generic flush mode has been set.
-      $this->clearMode = (int)$mode;
-    } else {
-      // No flush mode is set by configuration: provide sensible defaults.
-      // See FLUSH_* constants for comprehensible explaination of why this
-      // exists.
+//    if (null !== ($mode = variable_get('redis_flush_mode_' . $this->bin, null))) {
+//      // A bin specific flush mode has been set.
+//      $this->clearMode = (int)$mode;
+//    } else if (null !== ($mode = variable_get('redis_flush_mode', null))) {
+//      // A site wide generic flush mode has been set.
+//      $this->clearMode = (int)$mode;
+//    } else {
+//      // No flush mode is set by configuration: provide sensible defaults.
+//      // See FLUSH_* constants for comprehensible explaination of why this
+//      // exists.
       switch ($this->bin) {
 
         case 'cache_page':
@@ -145,14 +145,14 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
           $this->clearMode = self::FLUSH_NOTHING;
           break;
       }
-    }
+//    }
 
-    $ttl = null;
-    if (null === ($ttl = variable_get('redis_perm_ttl_' . $this->bin, null))) {
-      if (null === ($ttl = variable_get('redis_perm_ttl', null))) {
+//    $ttl = null;
+//    if (null === ($ttl = variable_get('redis_perm_ttl_' . $this->bin, null))) {
+//      if (null === ($ttl = variable_get('redis_perm_ttl', null))) {
         $ttl = self::LIFETIME_PERM_DEFAULT;
-      }
-    }
+//      }
+//    }
     if ($ttl === (int)$ttl) {
       $this->permTtl = $ttl;
     } else {

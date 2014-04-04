@@ -1,6 +1,7 @@
 name: Redis
 description: Provide a module placeholder, for using as dependency for module that needs Redis.
 package: Performance
+type: module
 version: VERSION
 core: 8.x
-configure = redis.admin_display
+configure: redis.admin_display

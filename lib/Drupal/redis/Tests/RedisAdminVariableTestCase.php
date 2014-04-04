@@ -7,7 +7,9 @@
 
 namespace Drupal\redis\Tests;
 
-class RedisAdminVariableTestCase extends DrupalWebTestCase {
+use Drupal\simpletest\WebTestBase;
+
+class RedisAdminVariableTestCase extends WebTestBase {
 
   public static function getInfo() {
     return array(

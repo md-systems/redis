@@ -7,10 +7,12 @@
 
 namespace Drupal\redis\Tests;
 
+use Drupal\simpletest\DrupalUnitTestBase;
+
 /**
  * Base implementation for locking functionnal testing.
  */
-abstract class AbstractRedisCacheUnitTestCase extends DrupalUnitTestCase
+abstract class AbstractRedisCacheUnitTestCase extends DrupalUnitTestBase
 {
     /**
      * @var DrupalCacheInterface

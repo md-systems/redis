@@ -7,6 +7,8 @@
 
 namespace Drupal\redis\Form;
 
+use Drupal\Core\Form\ConfigFormBase;
+
 /**
  * Main settings and review administration screen.
  */
@@ -44,13 +46,13 @@ class RedisSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => t("Host"),
       '#default_value' => $config->get('connection.host'),
-      '#description' => t("Redis server host. Default is <em>@default</em>.", array('@default' => Redis_Client::REDIS_DEFAULT_HOST)),
+      //'#description' => t("Redis server host. Default is <em>@default</em>.", array('@default' => Redis_Client::REDIS_DEFAULT_HOST)),
     );
     $form['connection']['port'] = array(
       '#type' => 'textfield',
       '#title' => t("Port"),
       '#default_value' => $config->get('connection.port'),
-      '#description' => t("Redis server port. Default is <em>@default</em>.", array('@default' => Redis_Client::REDIS_DEFAULT_PORT)),
+      //'#description' => t("Redis server port. Default is <em>@default</em>.", array('@default' => Redis_Client::REDIS_DEFAULT_PORT)),
     );
     $form['connection']['base'] = array(
       '#type' => 'textfield',
@@ -62,7 +64,7 @@ class RedisSettingsForm extends ConfigFormBase {
       '#type' => 'radios',
       '#title' => t("Client"),
       '#options' => array(
-        NULL => t("None or automatic"),
+        'auto' => t("None or automatic"),
         'PhpRedis' => t("PhpRedis PHP extension"),
         'Predis' => t("Predis PHP library"),
       ),
@@ -76,7 +78,7 @@ class RedisSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm($form, &$form_state) {
+  public function submitForm(array &$form, array &$form_state) {
     $config = $this->configFactory->get('redis');
 
     $string_values = array('host', 'interface');

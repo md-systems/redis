@@ -1,11 +1,16 @@
 <?php
 
 /**
+ * @file
+ * Contains \Drupal\redis\LockBase.
+ */
+
+namespace Drupal\redis;
+
+/**
  * Lock backend shared methods.
  */
-abstract class Redis_Lock_Backend_Default extends Redis_AbstractBackend implements
-    Redis_Lock_Backend_Interface
-{
+abstract class LockBase extends AbstractBackend implements LockInterface {
   /**
    * Current page lock token identifier.
    *

@@ -1,9 +1,16 @@
 <?php
 
 /**
+ * @file
+ * Contains \Drupal\redis\ClientInterface.
+ */
+
+namespace Drupal\redis;
+
+/**
  * Client proxy, client handling class tied to the bare mininum.
  */
-interface Redis_Client_Interface {
+interface ClientInterface {
   /**
    * Get the connected client instance.
    * 

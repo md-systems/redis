@@ -1,6 +1,13 @@
 <?php
 
-abstract class Redis_AbstractBackend
+/**
+ * @file
+ * Contains \Drupal\redis\AbstractBackend.
+ */
+
+namespace Drupal\redis;
+
+abstract class AbstractBackend
 {
     /**
      * Get global default prefix

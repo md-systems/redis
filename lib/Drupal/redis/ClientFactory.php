@@ -1,15 +1,16 @@
 <?php
 
-// It may happen we get here with no autoloader set during the Drupal core
-// early bootstrap phase, at cache backend init time.
-if (!interface_exists('Redis_Client_Interface')) {
-  require_once dirname(__FILE__) . '/Client/Interface.php';
-}
+/**
+ * @file
+ * Contains \Drupal\redis\ClientFactory.php
+ */
+
+namespace Drupal\redis;
 
 /**
  * Common code and client singleton, for all Redis clients.
  */
-class Redis_Client {
+class ClientFactory {
   /**
    * Redis default host.
    */
@@ -33,25 +34,25 @@ class Redis_Client {
   /**
    * Cache implementation namespace.
    */
-  const REDIS_IMPL_CACHE = 'Redis_Cache_';
+  const REDIS_IMPL_CACHE = '\\Drupal\\redis\\Cache\\';
 
   /**
    * Lock implementation namespace.
    */
-  const REDIS_IMPL_LOCK = 'Redis_Lock_Backend_';
+  const REDIS_IMPL_LOCK = '\\Drupal\\redis\\Lock\\';
 
   /**
    * Session implementation namespace.
    */
-  const REDIS_IMPL_SESSION = 'Redis_Session_Backend_';
+  const REDIS_IMPL_SESSION = '\\Drupal\\redis\\Session\\';
 
   /**
    * Session implementation namespace.
    */
-  const REDIS_IMPL_CLIENT = 'Redis_Client_';
+  const REDIS_IMPL_CLIENT = '\\Drupal\\redis\\Client\\';
 
   /**
-   * @var Redis_Client_Interface
+   * @var \Drupal\redis\ClientInterface
    */
   protected static $_clientInterface;
 
@@ -67,7 +68,7 @@ class Redis_Client {
   /**
    * Set client proxy.
    */
-  public static function setClient(Redis_Client_Interface $interface) {
+  public static function setClient(ClientInterface $interface) {
     if (isset(self::$_client)) {
       throw new Exception("Once Redis client is connected, you cannot change client proxy instance.");
     }
@@ -82,7 +83,7 @@ class Redis_Client {
    * client implementation, this will be overrided at early bootstrap phase
    * and configuration will be ignored.
    * 
-   * @return Redis_Client_Interface
+   * @return ClientInterface
    */
   public static function getClientInterface() {
     global $conf;
@@ -144,7 +145,7 @@ class Redis_Client {
    * asked core subsystem.
    * 
    * @param string $system
-   *   One of the Redis_Client::IMPL_* constant.
+   *   One of the ClientFactory::IMPL_* constant.
    * @param string $clientName
    *   Client name, if fixed.
    * 

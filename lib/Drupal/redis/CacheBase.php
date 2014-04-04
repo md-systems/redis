@@ -1,15 +1,23 @@
 <?php
 
 /**
+ * @file
+ * Contains \Drupal\redis\CacheBase.
+ */
+
+namespace Drupal\redis;
+
+use Drupal\Core\Cache\CacheBackendInterface;
+
+/**
  * Because those objects will be spawned during boostrap all its configuration
  * must be set in the settings.php file.
  *
  * For a detailed history of flush modes see:
  *   https://drupal.org/node/1980250
  */
-abstract class Redis_Cache_Base extends Redis_AbstractBackend implements
-    DrupalCacheInterface
-{
+abstract class CacheBase extends AbstractBackend implements CacheBackendInterface {
+
   /**
    * Temporary cache items lifetime is infinite.
    */

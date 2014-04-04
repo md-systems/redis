@@ -8,6 +8,7 @@
 namespace Drupal\redis\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
+use Drupal\redis\ClientFactory;
 
 /**
  * Main settings and review administration screen.
@@ -46,13 +47,13 @@ class RedisSettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => t("Host"),
       '#default_value' => $config->get('connection.host'),
-      //'#description' => t("Redis server host. Default is <em>@default</em>.", array('@default' => Redis_Client::REDIS_DEFAULT_HOST)),
+      '#description' => t("Redis server host. Default is <em>@default</em>.", array('@default' => ClientFactory::REDIS_DEFAULT_HOST)),
     );
     $form['connection']['port'] = array(
       '#type' => 'textfield',
       '#title' => t("Port"),
       '#default_value' => $config->get('connection.port'),
-      //'#description' => t("Redis server port. Default is <em>@default</em>.", array('@default' => Redis_Client::REDIS_DEFAULT_PORT)),
+      '#description' => t("Redis server port. Default is <em>@default</em>.", array('@default' => ClientFactory::REDIS_DEFAULT_PORT)),
     );
     $form['connection']['base'] = array(
       '#type' => 'textfield',

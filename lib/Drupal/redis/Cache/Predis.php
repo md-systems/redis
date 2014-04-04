@@ -1,13 +1,22 @@
 <?php
 
 /**
+ * @file
+ * Contains \Drupal\redis\Cache\Predis.
+ */
+
+namespace Drupal\redis\Cache;
+
+use Drupal\redis\CacheBase;
+
+/**
  * Predis cache backend.
  */
-class Redis_Cache_Predis extends Redis_Cache_Base {
+class Predis extends CacheBase {
 
   function get($cid) {
 
-    $client = Redis_Client::getClient();
+    $client = ClientFactory::getClient();
     $key    = $this->getKey($cid);
 
     $cached = $client->hgetall($key);
@@ -27,7 +36,7 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
 
   function getMultiple(&$cids) {
 
-    $client = Redis_Client::getClient();
+    $client = ClientFactory::getClient();
     $ret    = $keys = array();
     $keys   = array_map(array($this, 'getKey'), $cids);
 
@@ -73,7 +82,7 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
 
   function set($cid, $data, $expire = CACHE_PERMANENT) {
 
-    $client = Redis_Client::getClient();
+    $client = ClientFactory::getClient();
     $skey   = $this->getKey(Redis_Cache_Base::TEMP_SET);
     $key    = $this->getKey($cid);
     $self   = $this;
@@ -132,7 +141,7 @@ class Redis_Cache_Predis extends Redis_Cache_Base {
 
     $keys   = array();
     $skey   = $this->getKey(Redis_Cache_Base::TEMP_SET);
-    $client = Redis_Client::getClient();
+    $client = ClientFactory::getClient();
 
     if (NULL === $cid) {
       switch ($this->getClearMode()) {

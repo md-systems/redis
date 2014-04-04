@@ -1,9 +1,16 @@
 <?php
 
 /**
+ * @file
+ * Contains Drupal\redis\LockInterface.
+ */
+
+namespace Drupal\redis;
+
+/**
  * Lock backend interface.
  */
-interface Redis_Lock_Backend_Interface {
+interface LockInterface {
   /**
    * Acquire lock.
    * 

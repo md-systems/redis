@@ -1,9 +1,18 @@
 <?php
 
 /**
+ * @file
+ * Contains Drupal\redis\Client\Predis.
+ */
+
+namespace Drupal\redis\Client;
+
+use Drupal\redis\ClientInterface;
+
+/**
  * Predis client specific implementation.
  */
-class Redis_Client_Predis implements Redis_Client_Interface {
+class Predis implements ClientInterface {
 
   /**
    * Circular depedency breaker.

@@ -87,7 +87,6 @@ class PhpRedis extends CacheBase {
   public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
 
     $client = ClientFactory::getClient();
-    $skey   = $this->getKey(CacheBase::TEMP_SET);
     $key    = $this->getKey($cid);
 
     $hash = array(
@@ -110,15 +109,6 @@ class PhpRedis extends CacheBase {
     $pipe->hmset($key, $hash);
 
     switch ($expire) {
-
-//      case CACHE_TEMPORARY:
-//        $lifetime = variable_get('cache_lifetime', CacheBase::LIFETIME_DEFAULT);
-//        if (0 < $lifetime) {
-//          $pipe->expire($key, $lifetime);
-//        }
-//        $pipe->sadd($skey, $cid);
-//        break;
-
       case Cache::PERMANENT:
         if (0 !== ($ttl = $this->getPermTtl())) {
           $pipe->expire($key, $ttl);
@@ -137,7 +127,6 @@ class PhpRedis extends CacheBase {
           $pipe->expire($key, 0);
         } else {
           $pipe->expire($key, $ttl);
-          $pipe->sadd($skey, $cid);
         }
         break;
     }
@@ -150,12 +139,10 @@ class PhpRedis extends CacheBase {
    */
   public function delete($cid) {
     $keys   = array();
-    $skey   = $this->getKey(CacheBase::TEMP_SET);
     $client = ClientFactory::getClient();
 
     // Single key drop.
     $keys[] = $key = $this->getKey($cid);
-    $client->srem($skey, $key);
 
     if (count($keys) < CacheBase::KEY_THRESHOLD) {
       $client->del($keys);
@@ -194,10 +181,8 @@ class PhpRedis extends CacheBase {
    */
   public function deleteAll() {
     $keys   = array();
-    $skey   = $this->getKey(CacheBase::TEMP_SET);
     $client = ClientFactory::getClient();
 
-    $keys[] = $skey;
 
     $remoteKeys = $client->keys($this->getKey('*'));
     // PhpRedis seems to suffer of some bugs.

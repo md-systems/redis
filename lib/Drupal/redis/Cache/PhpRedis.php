@@ -108,27 +108,15 @@ class PhpRedis extends CacheBase {
     $pipe = $client->multi(\Redis::PIPELINE);
     $pipe->hmset($key, $hash);
 
-    switch ($expire) {
-      case Cache::PERMANENT:
-        if (0 !== ($ttl = $this->getPermTtl())) {
-          $pipe->expire($key, $ttl);
-        }
-        // We dont need the PERSIST command, since it's the default.
-        break;
-
-      default:
-        // If caller gives us an expiry timestamp in the past
-        // the key will expire now and will never be read.
-        $ttl = $expire - time();
-        if ($ttl < 0) {
-          // Behavior between Predis and PhpRedis seems to change here: when
-          // setting a negative expire time, PhpRedis seems to ignore the
-          // command and leave the key permanent.
-          $pipe->expire($key, 0);
-        } else {
-          $pipe->expire($key, $ttl);
-        }
-        break;
+    if ($expire == Cache::PERMANENT) {
+      $ttl = $this->getPermTtl();
+      if ($ttl !== 0) {
+        $pipe->expire($key, $ttl);
+      }
+    }
+    else {
+      $ttl = $expire - REQUEST_TIME;
+      $pipe->expire($key, max(0, $ttl));
     }
 
     $pipe->exec();

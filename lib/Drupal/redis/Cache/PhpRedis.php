@@ -10,6 +10,7 @@ namespace Drupal\redis\Cache;
 use Drupal\redis\CacheBase;
 use Drupal\redis\ClientFactory;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Cache\CacheBackendInterface;
 
 /**
  * PhpRedis cache backend.
@@ -36,9 +37,11 @@ class PhpRedis extends CacheBase {
       if ($cached->serialized) {
         $cached->data = unserialize($cached->data);
       }
+
+      $cached->valid = ($cached->expire == Cache::PERMANENT || $cached->expire >= REQUEST_TIME) && !$stale;
     }
     else {
-      $cached = NULL;
+      $cached = FALSE;
     }
 
     return $cached;
@@ -71,6 +74,8 @@ class PhpRedis extends CacheBase {
           $cached->data = unserialize($cached->data);
         }
 
+        $cached->valid = ($cached->expire == Cache::PERMANENT || $cached->expire >= REQUEST_TIME) && !$stale;
+
         $ret[$cached->cid] = $cached;
       }
     }
@@ -96,7 +101,7 @@ class PhpRedis extends CacheBase {
 
     $hash = array(
       'cid' => $cid,
-      'created' => time(),
+      'created' => REQUEST_TIME,
       'expire' => $expire,
     );
 
@@ -126,6 +131,7 @@ class PhpRedis extends CacheBase {
     // Insert.
     $pipe->hmset($key, $hash);
     $pipe->sadd($this->getTagsByKeySet($key), $this->getTagForBin());
+    $pipe->sadd($this->getKeysByTagSet($this->getTagForBin()), $key);
     foreach ($this->flattenTags($tags) as $tag) {
       $pipe->sadd($this->getTagsByKeySet($key), $tag);
       $pipe->sadd($this->getKeysByTagSet($tag), $key);

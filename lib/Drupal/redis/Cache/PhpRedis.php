@@ -123,7 +123,7 @@ class PhpRedis extends CacheBase {
     $pipe->del($key);
     $pipe->del($this->getTagsByKeySet($key));
     foreach ($old_tags as $tag) {
-      $pipe->srem($this->getKeysByTagSet($key), $tag);
+      $pipe->srem($this->getKeysByTagSet($tag), $key);
     }
     $pipe->srem($this->getDeletedMetaSet($key), $key);
     $pipe->srem($this->getStaleMetaSet($key), $key);

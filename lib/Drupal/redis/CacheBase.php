@@ -140,7 +140,7 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
    * Return the key for the tag used to specify the bin of cache-entries.
    */
   protected function getTagForBin() {
-    return parent::getKey('x-redis-bin:' . $this->bin);
+    return 'x-redis-bin:' . $this->bin;
   }
 
 }

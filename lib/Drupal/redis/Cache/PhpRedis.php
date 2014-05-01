@@ -26,18 +26,13 @@ class PhpRedis extends CacheBase {
     $key    = $this->getKey($cid);
 
     list($cached, $deleted, $stale) = $client->multi(\Redis::PIPELINE)
-      ->hgetall($key)
+      ->get($key)
       ->sismember($this->getDeletedMetaSet(), $key)
       ->sismember($this->getStaleMetaSet(), $key)
       ->exec();
 
     if (!empty($cached) && !$deleted && ($allow_invalid || !$stale)) {
-      $cached = (object) $cached;
-
-      if ($cached->serialized) {
-        $cached->data = unserialize($cached->data);
-      }
-
+      $cached = unserialize($cached);
       $cached->valid = ($cached->expire == Cache::PERMANENT || $cached->expire >= REQUEST_TIME) && !$stale;
     }
     else {
@@ -59,7 +54,7 @@ class PhpRedis extends CacheBase {
 
     $pipe = $client->multi(\Redis::PIPELINE);
     foreach ($keys as $key) {
-      $pipe->hgetall($key);
+      $pipe->get($key);
       $pipe->sismember($this->getDeletedMetaSet(), $key);
       $pipe->sismember($this->getStaleMetaSet(), $key);
     }
@@ -68,12 +63,7 @@ class PhpRedis extends CacheBase {
     foreach (array_chunk($replies, 3) as $tuple) {
       list($cached, $deleted, $stale) = $tuple;
       if (!empty($cached) && !$deleted && ($allow_invalid || !$stale)) {
-        $cached = (object) $cached;
-
-        if ($cached->serialized) {
-          $cached->data = unserialize($cached->data);
-        }
-
+        $cached = unserialize($cached);
         $cached->valid = ($cached->expire == Cache::PERMANENT || $cached->expire >= REQUEST_TIME) && !$stale;
 
         $ret[$cached->cid] = $cached;
@@ -91,29 +81,11 @@ class PhpRedis extends CacheBase {
 
   /**
    * {@inheritdoc}
-   *
-   * @todo: Add tags to a special hash (tag -> cid)
    */
   public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
 
     $client = ClientFactory::getClient();
     $key    = $this->getKey($cid);
-
-    $hash = array(
-      'cid' => $cid,
-      'created' => REQUEST_TIME,
-      'expire' => $expire,
-    );
-
-    // Let Redis handle the data types itself.
-    if (!is_scalar($data)) {
-      $hash['data'] = serialize($data);
-      $hash['serialized'] = 1;
-    }
-    else {
-      $hash['data'] = $data;
-      $hash['serialized'] = 0;
-    }
 
     $old_tags = $client->smembers($this->getTagsByKeySet($key));
 
@@ -129,7 +101,15 @@ class PhpRedis extends CacheBase {
     $pipe->srem($this->getStaleMetaSet($key), $key);
 
     // Insert.
-    $pipe->hmset($key, $hash);
+    // FIXME: Is there anything outside the caching layer expecting tags on the
+    // cached object?
+    $entry = (object) array(
+      'cid' => $cid,
+      'created' => REQUEST_TIME,
+      'expire' => $expire,
+      'data' => $data,
+    );
+    $pipe->set($key, serialize($entry));
     $pipe->sadd($this->getTagsByKeySet($key), $this->getTagForBin());
     $pipe->sadd($this->getKeysByTagSet($this->getTagForBin()), $key);
     foreach ($this->flattenTags($tags) as $tag) {

@@ -139,18 +139,8 @@ class PhpRedis extends CacheBase {
     $client = ClientFactory::getClient();
 
     // Single key drop.
-    $keys[] = $key = $this->getKey($cid);
-
-    if (count($keys) < CacheBase::KEY_THRESHOLD) {
-      $client->del($keys);
-    } else {
-      $pipe = $client->multi(\Redis::PIPELINE);
-      do {
-        $buffer = array_splice($keys, 0, CacheBase::KEY_THRESHOLD);
-        $pipe->del($buffer);
-      } while (!empty($keys));
-      $pipe->exec();
-    }
+    $keys[] = $this->getKey($cid);
+    $client->del($keys);
   }
 
   /**

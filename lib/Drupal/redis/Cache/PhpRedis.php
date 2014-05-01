@@ -125,6 +125,15 @@ class PhpRedis extends CacheBase {
   /**
    * {@inheritdoc}
    */
+  public function setMultiple(array $items) {
+    foreach ($items as $cid => $item) {
+      $this->set($cid, $item['data'], isset($item['expire']) ? $item['expire'] : CacheBackendInterface::CACHE_PERMANENT, isset($item['tags']) ? $item['tags'] : array());
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function delete($cid) {
     $keys   = array();
     $client = ClientFactory::getClient();

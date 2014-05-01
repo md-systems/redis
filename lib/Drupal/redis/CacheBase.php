@@ -96,11 +96,51 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
     }
   }
 
-  public function getKey($cid = null) {
-    if (null === $cid) {
+  /**
+   * Return the key for the given cache-id.
+   */
+  public function getKey($cid = NULL) {
+    if (NULL === $cid) {
       return parent::getKey($this->bin);
-    } else {
+    }
+    else {
       return parent::getKey($this->bin . ':' . $cid);
     }
   }
+
+  /**
+   * Return the key for the set holding the keys of deletable entries.
+   */
+  protected function getDeletedMetaSet() {
+    return parent::getKey('meta/deleted');
+  }
+
+  /**
+   * Return the key for the set holding the keys of stale entries.
+   */
+  protected function getStaleMetaSet() {
+    return parent::getKey('meta/stale');
+  }
+
+  /**
+   * Return the key for the keys-by-tag set.
+   */
+  protected function getKeysByTagSet($tag) {
+    return parent::getKey('meta/keysByTag:' . $tag);
+  }
+
+  /**
+   * Return the key for the tags-by-cid set.
+   */
+  protected function getTagsByKeySet($key) {
+    return parent::getKey('meta/tagsByKey:' . $key);
+  }
+
+  /**
+   * Return the key for the tag used to specify the bin of cache-entries.
+   */
+  protected function getTagForBin() {
+    return 'x-redis-bin:' . $this->bin;
+  }
+
 }

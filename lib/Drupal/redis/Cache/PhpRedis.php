@@ -24,19 +24,21 @@ class PhpRedis extends CacheBase {
     $client = ClientFactory::getClient();
     $key    = $this->getKey($cid);
 
-    $cached = $client->hgetall($key);
+    list($cached, $deleted, $stale) = $client->multi(\Redis::PIPELINE)
+      ->hgetall($key)
+      ->sismember($this->getDeletedMetaSet(), $key)
+      ->sismember($this->getStaleMetaSet(), $key)
+      ->exec();
 
-    // Recent versions of PhpRedis will return the Redis instance
-    // instead of an empty array when the HGETALL target key does
-    // not exists. I see what you did there.
-    if (empty($cached) || !is_array($cached)) {
-      return FALSE;
+    if (!empty($cached) && !$deleted && ($allow_invalid || !$stale)) {
+      $cached = (object) $cached;
+
+      if ($cached->serialized) {
+        $cached->data = unserialize($cached->data);
+      }
     }
-
-    $cached = (object)$cached;
-
-    if ($cached->serialized) {
-      $cached->data = unserialize($cached->data);
+    else {
+      $cached = NULL;
     }
 
     return $cached;
@@ -55,12 +57,15 @@ class PhpRedis extends CacheBase {
     $pipe = $client->multi(\Redis::PIPELINE);
     foreach ($keys as $key) {
       $pipe->hgetall($key);
+      $pipe->sismember($this->getDeletedMetaSet(), $key);
+      $pipe->sismember($this->getStaleMetaSet(), $key);
     }
     $replies = $pipe->exec();
 
-    foreach ($replies as $reply) {
-      if (!empty($reply)) {
-        $cached = (object)$reply;
+    foreach (array_chunk($replies, 3) as $tuple) {
+      list($cached, $deleted, $stale) = $tuple;
+      if (!empty($cached) && !$deleted && ($allow_invalid || !$stale)) {
+        $cached = (object) $cached;
 
         if ($cached->serialized) {
           $cached->data = unserialize($cached->data);
@@ -105,18 +110,38 @@ class PhpRedis extends CacheBase {
       $hash['serialized'] = 0;
     }
 
-    $pipe = $client->multi(\Redis::PIPELINE);
+    $old_tags = $client->smembers($this->getTagsByKeySet($key));
+
+    $pipe = $client->multi(\Redis::MULTI);
+
+    // Remove.
+    $pipe->del($key);
+    $pipe->del($this->getTagsByKeySet($key));
+    foreach ($old_tags as $tag) {
+      $pipe->srem($this->getKeysByTagSet($key), $tag);
+    }
+    $pipe->srem($this->getDeletedMetaSet($key), $key);
+    $pipe->srem($this->getStaleMetaSet($key), $key);
+
+    // Insert.
     $pipe->hmset($key, $hash);
+    $pipe->sadd($this->getTagsByKeySet($key), $this->getTagForBin());
+    foreach ($this->flattenTags($tags) as $tag) {
+      $pipe->sadd($this->getTagsByKeySet($key), $tag);
+      $pipe->sadd($this->getKeysByTagSet($tag), $key);
+    }
 
     if ($expire == Cache::PERMANENT) {
       $ttl = $this->getPermTtl();
       if ($ttl !== 0) {
         $pipe->expire($key, $ttl);
+        $pipe->expire($this->getTagsByKeySet($key), $ttl);
       }
     }
     else {
-      $ttl = $expire - REQUEST_TIME;
-      $pipe->expire($key, max(0, $ttl));
+      $ttl = max(0, $expire - REQUEST_TIME);
+      $pipe->expire($key, $ttl);
+      $pipe->expire($this->getTagsByKeySet($key), $ttl);
     }
 
     $pipe->exec();
@@ -135,96 +160,80 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function delete($cid) {
-    $keys   = array();
     $client = ClientFactory::getClient();
-
-    // Single key drop.
-    $keys[] = $this->getKey($cid);
-    $client->del($keys);
+    $client->sadd($this->getDeletedMetaSet(), $this->getKey($cid));
   }
 
   /**
    * {@inheritdoc}
-   *
-   * @todo: implement
    */
   public function deleteMultiple(array $cids) {
+    $client = ClientFactory::getClient();
+    $pipe = $client->multi(\Redis::PIPELINE);
     foreach ($cids as $cid) {
-      $this->delete($cid);
+      $pipe->sadd($this->getDeletedMetaSet(), $this->getKey($cid));
     }
+    $pipe->exec();
   }
 
   /**
    * {@inheritdoc}
-   *
-   * @todo: implement
    */
   public function deleteTags(array $tags) {
-    $this->deleteAll();
+    $client = ClientFactory::getClient();
+    $pipe = $client->multi(\Redis::PIPELINE);
+    foreach ($this->flattenTags($tags) as $tag) {
+      $pipe->sunionstore($this->getDeletedMetaSet(), $this->getKeysByTagSet($tag));
+    }
+    $pipe->exec();
   }
 
   /**
    * {@inheritdoc}
    */
   public function deleteAll() {
-    $keys   = array();
-    $client = ClientFactory::getClient();
-
-
-    $remoteKeys = $client->keys($this->getKey('*'));
-    // PhpRedis seems to suffer of some bugs.
-    if (!empty($remoteKeys) && is_array($remoteKeys)) {
-      $keys = array_merge($keys, $remoteKeys);
-    }
-
-    if (!empty($keys)) {
-      if (count($keys) < CacheBase::KEY_THRESHOLD) {
-        $client->del($keys);
-      } else {
-        $pipe = $client->multi(\Redis::PIPELINE);
-        do {
-          $buffer = array_splice($keys, 0, CacheBase::KEY_THRESHOLD);
-          $pipe->del($buffer);
-        } while (!empty($keys));
-        $pipe->exec();
-      }
-    }
+    $tag = $this->getTagForBin();
+    $this->deleteTags(array($tag));
   }
 
   /**
    * {@inheritdoc}
-   *
-   * @todo: implement
    */
   public function invalidate($cid) {
-    $this->delete($cid);
+    $client = ClientFactory::getClient();
+    $client->sadd($this->getStaleMetaSet(), $this->getKey($cid));
   }
 
   /**
    * {@inheritdoc}
-   *
-   * @todo: implement
    */
   public function invalidateMultiple(array $cids) {
-    $this->deleteMultiple($cids);
+    $client = ClientFactory::getClient();
+    $pipe = $client->multi(\Redis::PIPELINE);
+    foreach ($cids as $cid) {
+      $pipe->sadd($this->getStaleMetaSet(), $this->getKey($cid));
+    }
+    $pipe->exec();
   }
 
   /**
    * {@inheritdoc}
-   *
-   * @todo: implement
    */
   public function invalidateTags(array $tags) {
-    $this->deleteTags($tags);
+    $client = ClientFactory::getClient();
+    $pipe = $client->multi(\Redis::PIPELINE);
+    foreach ($this->flattenTags($tags) as $tag) {
+      $pipe->sunionstore($this->getStaleMetaSet(), $this->getKeysByTagSet($tag));
+    }
+    $pipe->exec();
   }
 
   /**
    * {@inheritdoc}
-   *
-   * @todo: implement
    */
   public function invalidateAll() {
-    $this->deleteAll();
+    $tag = $this->getTagForBin();
+    $this->invalidateTags(array($tag));
   }
 
   /**
@@ -237,14 +246,45 @@ class PhpRedis extends CacheBase {
 
   /**
    * {@inheritdoc}
+   */
+  public function removeBin() {
+    $this->deleteAll();
+  }
+
+  /**
+   * {@inheritdoc}
    *
    * @todo: implement
    */
-  public function removeBin() {
+  public function isEmpty() {
   }
 
-  function isEmpty() {
-    // FIXME: Todo.
+  /**
+   * 'Flattens' a tags array into an array of strings.
+   *
+   * @param array $tags
+   *   Associative array of tags to flatten.
+   *
+   * @return array
+   *   An indexed array of flattened tag identifiers.
+   */
+  protected function flattenTags(array $tags) {
+    if (isset($tags[0])) {
+      return $tags;
+    }
+
+    $flat_tags = array();
+    foreach ($tags as $namespace => $values) {
+      if (is_array($values)) {
+        foreach ($values as $value) {
+          $flat_tags[] = "$namespace:$value";
+        }
+      }
+      else {
+        $flat_tags[] = "$namespace:$values";
+      }
+    }
+    return $flat_tags;
   }
 
 }

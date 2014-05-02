@@ -31,15 +31,15 @@ class PhpRedis extends CacheBase {
       ->sismember($this->getStaleMetaSet(), $key)
       ->exec();
 
-    if (!empty($cached) && !$deleted && ($allow_invalid || !$stale)) {
+    if (!empty($cached) && !$deleted) {
       $cached = unserialize($cached);
       $cached->valid = ($cached->expire == Cache::PERMANENT || $cached->expire >= REQUEST_TIME) && !$stale;
-    }
-    else {
-      $cached = FALSE;
+      if ($allow_invalid || $cached->valid) {
+        return $cached;
+      }
     }
 
-    return $cached;
+    return FALSE;
   }
 
   /**
@@ -62,11 +62,12 @@ class PhpRedis extends CacheBase {
 
     foreach (array_chunk($replies, 3) as $tuple) {
       list($cached, $deleted, $stale) = $tuple;
-      if (!empty($cached) && !$deleted && ($allow_invalid || !$stale)) {
+      if (!empty($cached) && !$deleted) {
         $cached = unserialize($cached);
         $cached->valid = ($cached->expire == Cache::PERMANENT || $cached->expire >= REQUEST_TIME) && !$stale;
-
-        $ret[$cached->cid] = $cached;
+        if ($allow_invalid || $cached->valid) {
+          $ret[$cached->cid] = $cached;
+        }
       }
     }
 

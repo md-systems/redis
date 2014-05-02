@@ -252,7 +252,7 @@ class PhpRedis extends CacheBase {
         }
       }
       else {
-        $ttl = max(0, $entry->expire - REQUEST_TIME);
+        $ttl = max($this->minTtl, $entry->expire - REQUEST_TIME);
         $pipe->expire($key, $ttl);
         $pipe->expire($this->getTagsByKeySet($key), $ttl);
       }

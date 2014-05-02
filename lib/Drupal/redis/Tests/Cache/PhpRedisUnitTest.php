@@ -41,7 +41,9 @@ class PhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
    *   A new PhpRedis cache backend.
    */
   protected function createCacheBackend($bin) {
-    return new PhpRedis($bin);
+    $cache = new PhpRedis($bin);
+    $cache->setMinTtl(10);
+    return $cache;
   }
 
   /**

@@ -61,6 +61,14 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
   protected $permTtl = self::LIFETIME_PERM_DEFAULT;
 
   /**
+   * Minimal TTL to use.
+   *
+   * Note that this is for testing purposes. Do not specify the minimal TTL
+   * outside of unit-tests.
+   */
+  protected $minTtl = 0;
+
+  /**
    * Get TTL for CACHE_PERMANENT items.
    *
    * @return int
@@ -141,6 +149,13 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
    */
   protected function getTagForBin() {
     return 'x-redis-bin:' . $this->bin;
+  }
+
+  /**
+   * Set the minimum TTL (unit testing only).
+   */
+  public function setMinTtl($ttl) {
+    $this->minTtl = $ttl;
   }
 
 }

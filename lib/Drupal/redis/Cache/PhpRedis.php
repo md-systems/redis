@@ -185,10 +185,18 @@ class PhpRedis extends CacheBase {
 
   /**
    * {@inheritdoc}
-   *
-   * @todo: implement
    */
   public function garbageCollection() {
+    $client = ClientFactory::getClient();
+
+    $n = $client->scard($this->getDeletedMetaSet());
+    for ($i = 0; $i < $n; $i++) {
+      $client->watch($this->getDeletedMetaSet());
+      $key = $client->srandmember($this->getDeletedMetaSet());
+      if ($key) {
+        $this->replace($key);
+      }
+    }
   }
 
   /**

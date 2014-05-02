@@ -84,54 +84,14 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
-
-    $client = ClientFactory::getClient();
-    $key    = $this->getKey($cid);
-
-    $old_tags = $client->smembers($this->getTagsByKeySet($key));
-
-    $pipe = $client->multi(\Redis::MULTI);
-
-    // Remove.
-    $pipe->del($key);
-    $pipe->del($this->getTagsByKeySet($key));
-    foreach ($old_tags as $tag) {
-      $pipe->srem($this->getKeysByTagSet($tag), $key);
-    }
-    $pipe->srem($this->getDeletedMetaSet($key), $key);
-    $pipe->srem($this->getStaleMetaSet($key), $key);
-
-    // Insert.
-    // FIXME: Is there anything outside the caching layer expecting tags on the
-    // cached object?
     $entry = (object) array(
       'cid' => $cid,
       'created' => REQUEST_TIME,
       'expire' => $expire,
       'data' => $data,
+      'tags' => $this->flattenTags($tags),
     );
-    $pipe->set($key, serialize($entry));
-    $pipe->sadd($this->getTagsByKeySet($key), $this->getTagForBin());
-    $pipe->sadd($this->getKeysByTagSet($this->getTagForBin()), $key);
-    foreach ($this->flattenTags($tags) as $tag) {
-      $pipe->sadd($this->getTagsByKeySet($key), $tag);
-      $pipe->sadd($this->getKeysByTagSet($tag), $key);
-    }
-
-    if ($expire == Cache::PERMANENT) {
-      $ttl = $this->getPermTtl();
-      if ($ttl !== 0) {
-        $pipe->expire($key, $ttl);
-        $pipe->expire($this->getTagsByKeySet($key), $ttl);
-      }
-    }
-    else {
-      $ttl = max(0, $expire - REQUEST_TIME);
-      $pipe->expire($key, $ttl);
-      $pipe->expire($this->getTagsByKeySet($key), $ttl);
-    }
-
-    $pipe->exec();
+    $this->replace($this->getKey($cid), $entry);
   }
 
   /**
@@ -244,6 +204,53 @@ class PhpRedis extends CacheBase {
    * @todo: implement
    */
   public function isEmpty() {
+  }
+
+  /**
+   * Replace or remove a cache entry.
+   */
+  protected function replace($key, $entry = NULL) {
+    $client = ClientFactory::getClient();
+
+    $client->watch($key);
+    $old_tags = $client->smembers($this->getTagsByKeySet($key));
+
+    $pipe = $client->multi(\Redis::MULTI);
+
+    // Remove.
+    $pipe->del($key);
+    $pipe->del($this->getTagsByKeySet($key));
+    foreach ($old_tags as $tag) {
+      $pipe->srem($this->getKeysByTagSet($tag), $key);
+    }
+    $pipe->srem($this->getDeletedMetaSet($key), $key);
+    $pipe->srem($this->getStaleMetaSet($key), $key);
+
+    // Insert.
+    if ($entry) {
+      $pipe->set($key, serialize($entry));
+      $pipe->sadd($this->getTagsByKeySet($key), $this->getTagForBin());
+      $pipe->sadd($this->getKeysByTagSet($this->getTagForBin()), $key);
+      foreach ($this->flattenTags($entry->tags) as $tag) {
+        $pipe->sadd($this->getTagsByKeySet($key), $tag);
+        $pipe->sadd($this->getKeysByTagSet($tag), $key);
+      }
+
+      if ($entry->expire == Cache::PERMANENT) {
+        $ttl = $this->getPermTtl();
+        if ($ttl !== 0) {
+          $pipe->expire($key, $ttl);
+          $pipe->expire($this->getTagsByKeySet($key), $ttl);
+        }
+      }
+      else {
+        $ttl = max(0, $entry->expire - REQUEST_TIME);
+        $pipe->expire($key, $ttl);
+        $pipe->expire($this->getTagsByKeySet($key), $ttl);
+      }
+    }
+
+    return $pipe->exec();
   }
 
   /**

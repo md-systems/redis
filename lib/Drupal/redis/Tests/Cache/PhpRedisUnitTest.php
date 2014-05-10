@@ -46,30 +46,4 @@ class PhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
     return $cache;
   }
 
-  /**
-   * {@inheritdoc}
-   */
-  public function testIsEmpty() {
-    // PhpRedis::isEmpty() is not implemented.
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function testDeleteAll() {
-    // PhpRedis::isEmpty() is not implemented. Therefore it is necessary to
-    // reimplement testDeleteAll along the lines of testInvalidateAll (i.e.
-    // without calling isEmpty()).
-    $backend = $this->getCacheBackend();
-
-    // Set both expiring and permanent keys.
-    $backend->set('test1', 1, Cache::PERMANENT);
-    $backend->set('test2', 3, time() + 1000);
-
-    $backend->deleteAll();
-
-    $this->assertFalse($backend->get('test1'), 'First key has been deleted.');
-    $this->assertFalse($backend->get('test2'), 'Second key has been deleted.');
-  }
-
 }

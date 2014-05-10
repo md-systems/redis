@@ -207,14 +207,6 @@ class PhpRedis extends CacheBase {
   }
 
   /**
-   * {@inheritdoc}
-   *
-   * @todo: implement
-   */
-  public function isEmpty() {
-  }
-
-  /**
    * Replace or remove a cache entry.
    */
   protected function replace($key, $entry = NULL) {

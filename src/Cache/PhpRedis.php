@@ -32,6 +32,7 @@ class PhpRedis extends CacheBase {
       ->exec();
 
     if (!empty($cached) && !$deleted) {
+
       $cached = unserialize($cached);
       $cached->valid = ($cached->expire == Cache::PERMANENT || $cached->expire >= REQUEST_TIME) && !$stale;
       if ($allow_invalid || $cached->valid) {
@@ -215,6 +216,14 @@ class PhpRedis extends CacheBase {
     $client->watch($key);
     $old_tags = $client->smembers($this->getTagsByKeySet($key));
 
+    $serialized = NULL;
+    if ($entry) {
+      // Serialize the data before entering the transaction, as this could
+      // could call __sleep() implementations that might load data from the
+      // cache too.
+      $serialized = serialize($entry);
+    }
+
     $pipe = $client->multi(\Redis::MULTI);
 
     // Remove.
@@ -227,8 +236,8 @@ class PhpRedis extends CacheBase {
     $pipe->srem($this->getStaleMetaSet($key), $key);
 
     // Insert.
-    if ($entry) {
-      $pipe->set($key, serialize($entry));
+    if ($serialized) {
+      $pipe->set($key, $serialized);
       $pipe->sadd($this->getTagsByKeySet($key), $this->getTagForBin());
       $pipe->sadd($this->getKeysByTagSet($this->getTagForBin()), $key);
       foreach ($this->flattenTags($entry->tags) as $tag) {

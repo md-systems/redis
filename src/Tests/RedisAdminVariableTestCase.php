@@ -9,19 +9,19 @@ namespace Drupal\redis\Tests;
 
 use Drupal\simpletest\WebTestBase;
 
+/**
+ * Checks that Redis module variables are correctly type hinted when saved.
+ *
+ * @group Redis
+ */
 class RedisAdminVariableTestCase extends WebTestBase {
-
-  public static function getInfo() {
-    return array(
-      'name'  => 'Redis variables',
-      'description'  => 'Checks that Redis module variables are correctly type hinted when saved.',
-      'group' => 'Redis',
-    );
-  }
 
   protected $adminUser;
 
-  public function setUp() {
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
     parent::setUp('redis');
   }
 

@@ -8,6 +8,7 @@
 namespace Drupal\redis\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\redis\ClientFactory;
 
 /**
@@ -25,7 +26,7 @@ class RedisSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildForm($form, $form_state);
 
     $config = $this->configFactory->get('redis');
@@ -79,7 +80,7 @@ class RedisSettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->configFactory->get('redis');
 
     $string_values = array('host', 'interface');

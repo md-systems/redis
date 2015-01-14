@@ -7,12 +7,12 @@
 
 namespace Drupal\redis\Tests;
 
-use Drupal\simpletest\DrupalUnitTestBase;
+use Drupal\simpletest\KernelTestBase;
 
 /**
  * Base implementation for locking functionnal testing.
  */
-abstract class AbstractRedisCacheUnitTestCase extends DrupalUnitTestBase
+abstract class AbstractRedisCacheUnitTestCase extends KernelTestBase
 {
     /**
      * @var DrupalCacheInterface
@@ -32,7 +32,7 @@ abstract class AbstractRedisCacheUnitTestCase extends DrupalUnitTestBase
     /**
      * Get cache backend
      *
-     * @return DrupalCacheInterface
+     * @return \Drupal\Core\Cache\CacheBackendInterface
      */
     final protected function getBackend()
     {

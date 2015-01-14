@@ -6,6 +6,7 @@
  */
 
 namespace Drupal\redis\Tests;
+use Drupal\redis\ClientFactory;
 
 /**
  * Predis cache flush testing.
@@ -43,8 +44,9 @@ class PredisCacheFixesUnitTestCase extends AbstractRedisCacheFixesUnitTestCase
             return false;
         }, null, true);
 
-        $conf['redis_client_interface'] = 'Predis';
-
-        return 'Redis_Cache_Predis';
+      global $config;
+      $config['redis.settings']['connection']['interface'] = 'Predis';
+      throw new \Exception('todo implement or remove Predis');
+      return ClientFactory::REDIS_IMPL_CACHE . 'Predis';
     }
 }

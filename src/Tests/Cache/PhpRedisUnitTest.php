@@ -9,10 +9,11 @@ namespace Drupal\redis\Tests\Cache;
 
 use Drupal\redis\Cache\PhpRedis;
 use Drupal\system\Tests\Cache\GenericCacheBackendUnitTestBase;
-use Drupal\Core\Cache\Cache;
 
 /**
  * Tests PhpRedis cache backend using GenericCacheBackendUnitTestBase.
+ *
+ * @group redis
  */
 class PhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
 
@@ -26,12 +27,12 @@ class PhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
   /**
    * {@inheritdoc}
    */
-  public static function getInfo() {
-    return array(
-      'name' => 'PhpRedis cache backend',
-      'description' => 'Unit test of the PhpRedis cache backend using the generic cache unit test base.',
-      'group' => 'Redis',
-    );
+  public function setUp() {
+    parent::setUp();
+
+    // Set cache tag invalidator.
+    $backend = $this->getCacheBackend();
+    \Drupal::service('cache_tags.invalidator')->addInvalidator($backend);
   }
 
   /**

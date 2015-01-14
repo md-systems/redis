@@ -7,6 +7,7 @@
 
 namespace Drupal\redis\Cache;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\redis\CacheBase;
 
 /**
@@ -14,7 +15,7 @@ use Drupal\redis\CacheBase;
  */
 class Predis extends CacheBase {
 
-  function get($cid) {
+  function get($cid, $allow_invalid = FALSE) {
 
     $client = ClientFactory::getClient();
     $key    = $this->getKey($cid);
@@ -34,7 +35,10 @@ class Predis extends CacheBase {
     return $cached;
   }
 
-  function getMultiple(&$cids) {
+  /**
+   * {@inheritdoc}
+   */
+  function getMultiple(&$cids, $allow_invalid = FALSE) {
 
     $client = ClientFactory::getClient();
     $ret    = $keys = array();
@@ -80,7 +84,10 @@ class Predis extends CacheBase {
     return $ret;
   }
 
-  function set($cid, $data, $expire = CACHE_PERMANENT) {
+  /**
+   * {@inheritdoc}
+   */
+  function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
 
     $client = ClientFactory::getClient();
     $skey   = $this->getKey(Redis_Cache_Base::TEMP_SET);

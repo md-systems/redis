@@ -7,6 +7,8 @@
 
 namespace Drupal\redis\Tests;
 
+use Drupal\redis\ClientFactory;
+
 /**
  * PhpRedis cache flush testing.
  */
@@ -23,12 +25,12 @@ class PhpRedisCacheFlushUnitTestCase extends AbstractRedisCacheFlushUnitTestCase
 
     protected function getCacheBackendClass()
     {
-        global $conf;
+        global $config;
 
         if (extension_loaded('redis') && class_exists('Redis')) {
-            $conf['redis_client_interface'] = 'PhpRedis';
+            $config['redis.settings']['connection']['interface'] = 'PhpRedis';
 
-            return 'Redis_Cache_PhpRedis';
+            return ClientFactory::REDIS_IMPL_CACHE . 'PhpRedis';
         }
     }
 }

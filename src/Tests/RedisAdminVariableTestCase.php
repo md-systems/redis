@@ -21,9 +21,7 @@ class RedisAdminVariableTestCase extends WebTestBase {
   /**
    * {@inheritdoc}
    */
-  protected function setUp() {
-    parent::setUp('redis');
-  }
+  public static $modules = array('redis');
 
   public function testSave() {
 
@@ -33,35 +31,32 @@ class RedisAdminVariableTestCase extends WebTestBase {
     // Tests port is an int.
     $this->drupalGet('admin/config/development/performance/redis');
     $edit = array(
-      'redis_client_base'      => '',
-      'redis_client_port'      => '1234',
-      'redis_client_host'      => 'localhost',
-      'redis_client_interface' => '',
+      'base'      => '',
+      'port'      => 1234,
+      'host'      => 'localhost',
+      'interface' => 'auto',
     );
-    $this->drupalPost('admin/config/development/performance/redis', $edit, t('Save configuration'));
+    $this->drupalPostForm('admin/config/development/performance/redis', $edit, t('Save configuration'));
 
-    // Force variable cache to refresh.
-    $test = variable_initialize();
-    $conf = &$GLOBALS['conf'];
+    $config = \Drupal::config('redis.settings');
 
-    $this->assertFalse(array_key_exists('redis_client_base', $conf), "Empty int value has been removed");
-    $this->assertFalse(array_key_exists('redis_client_interface', $conf), "Empty string value has been removed");
-    $this->assertIdentical($conf['redis_client_port'], 1234, "Saved int is an int");
-    $this->assertIdentical($conf['redis_client_host'], 'localhost', "Saved string is a string");
+    $this->assertFalse($config->get('connection.base'), "Empty int value has been removed");
+    $this->assertEqual($config->get('connection.interface'), 'auto', "Empty string value has been removed");
+    $this->assertIdentical($config->get('connection.port'), 1234, "Saved int is an int");
+    $this->assertIdentical($config->get('connection.host'), 'localhost', "Saved string is a string");
 
     $this->drupalGet('admin/config/development/performance/redis');
     $edit = array(
-      'redis_client_base'      => '0',
-      'redis_client_port'      => '1234',
-      'redis_client_host'      => 'localhost',
-      'redis_client_interface' => '',
+      'base'      => 0,
+      'port'      => 1234,
+      'host'      => 'localhost',
+      'interface' => 'auto',
     );
-    $this->drupalPost('admin/config/development/performance/redis', $edit, t('Save configuration'));
+    $this->drupalPostForm('admin/config/development/performance/redis', $edit, t('Save configuration'));
 
     // Force variable cache to refresh.
-    $test = variable_initialize();
-    $conf = &$GLOBALS['conf'];
+    $config = \Drupal::config('redis.settings');
 
-    $this->assertIdentical($conf['redis_client_base'], 0, "Saved 0 valueed int is an int");
+    $this->assertIdentical($config->get('connection.base'), 0, "Saved 0 valueed int is an int");
   }
 }

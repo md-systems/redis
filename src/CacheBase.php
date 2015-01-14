@@ -7,16 +7,18 @@
 
 namespace Drupal\redis;
 
+use \DateInterval;
 use Drupal\Core\Cache\CacheBackendInterface;
+use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
 
 /**
- * Because those objects will be spawned during boostrap all its configuration
+ * Because those objects will be spawned during bootsrap all its configuration
  * must be set in the settings.php file.
  *
  * For a detailed history of flush modes see:
  *   https://drupal.org/node/1980250
  */
-abstract class CacheBase extends AbstractBackend implements CacheBackendInterface {
+abstract class CacheBase extends AbstractBackend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
 
   /**
    * Temporary cache items lifetime is infinite.
@@ -84,24 +86,7 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
 
     $this->bin = $bin;
 
-//    $ttl = null;
-//    if (null === ($ttl = variable_get('redis_perm_ttl_' . $this->bin, null))) {
-//      if (null === ($ttl = variable_get('redis_perm_ttl', null))) {
-        $ttl = self::LIFETIME_PERM_DEFAULT;
-//      }
-//    }
-    if ($ttl === (int)$ttl) {
-      $this->permTtl = $ttl;
-    } else {
-      if ($iv = DateInterval::createFromDateString($ttl)) {
-        // http://stackoverflow.com/questions/14277611/convert-dateinterval-object-to-seconds-in-php
-        $this->permTtl = ($iv->y * 31536000 + $iv->m * 2592000 + $iv->days * 86400 + $iv->h * 3600 + $iv->i * 60 + $iv->s);
-      } else {
-        // Sorry but we have to log this somehow.
-        trigger_error(sprintf("Parsed TTL '%s' has an invalid value: switching to default", $ttl));
-        $this->permTtl = self::LIFETIME_PERM_DEFAULT;
-      }
-    }
+    $this->setPermTtl();
   }
 
   /**
@@ -156,6 +141,38 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
    */
   public function setMinTtl($ttl) {
     $this->minTtl = $ttl;
+  }
+
+  /**
+   * Set the permanent TTL.
+   */
+  public function setPermTtl($ttl = NULL) {
+    if (isset($ttl)) {
+      $this->permTtl = $ttl;
+    }
+    else {
+      // Attempt to set from globals.
+      global $config;
+      if (isset($config['redis.settings']['perm_ttl_' . $this->bin])) {
+        $ttl = $config['redis.settings']['perm_ttl_' . $this->bin];
+        if ($ttl === (int) $ttl) {
+          $this->permTtl = $ttl;
+        }
+        else {
+          if ($iv = DateInterval::createFromDateString($ttl)) {
+            // http://stackoverflow.com/questions/14277611/convert-dateinterval-object-to-seconds-in-php
+            $this->permTtl = ($iv->y * 31536000 + $iv->m * 2592000 + $iv->days * 86400 + $iv->h * 3600 + $iv->i * 60 + $iv->s);
+          }
+          else {
+            // Sorry but we have to log this somehow.
+            // @todo throw exception instead?
+            trigger_error(sprintf("Parsed TTL '%s' has an invalid value: switching to default", $ttl));
+            $this->permTtl = self::LIFETIME_PERM_DEFAULT;
+          }
+
+        }
+      }
+    }
   }
 
 }

@@ -7,143 +7,70 @@
 
 namespace Drupal\redis\Tests;
 
+use Drupal\Core\Cache\Cache;
+use Drupal\redis\CacheBase;
+
 /**
  * Base implementation for locking functionnal testing.
  */
-abstract class AbstractRedisCacheFlushUnitTestCase extends AbstractRedisCacheUnitTestCase
-{
-    /**
-     * Test that the flush all flush mode flushes everything.
-     */
-    public function testFlushAll()
-    {
-        global $conf;
+abstract class AbstractRedisCacheFlushUnitTestCase extends AbstractRedisCacheUnitTestCase {
+  /**
+   * Test that the flush all flush mode flushes everything.
+   */
+  public function testDeleteAll() {
+    $backend = $this->getBackend();
+    $backend->set('test1', 42, Cache::PERMANENT);
+    $backend->set('test2', 'foo', Cache::PERMANENT);
+    $backend->set('test3', 'bar', 10);
 
-        $conf['redis_flush_mode_cache'] = 2;
-        $backend = $this->getBackend();
+    $backend->deleteAll();
 
-        $this->assertEqual(Redis_Cache_Base::FLUSH_ALL, $backend->getClearMode());
+    $this->assertFalse($backend->get('test1'));
+    $this->assertFalse($backend->get('test2'));
+    $this->assertFalse($backend->get('test3'));
+  }
 
-        $backend->set('test1', 42, CACHE_PERMANENT);
-        $backend->set('test2', 'foo', CACHE_TEMPORARY);
-        $backend->set('test3', 'bar', 10);
+  /**
+   * Tests tag deletion.
+   */
+  public function testTagsDeletion() {
+    // Create cache entry in multiple bins.
+    $tags = array('test_tag:1', 'test_tag:2', 'test_tag:3');
+    $backend = $this->getBackend();
 
-        $backend->clear();
+    $backend->set('test', 'value', Cache::PERMANENT, $tags);
+    $backend->set('test2', 'value', Cache::PERMANENT, array('test_tag:2'));
+    $this->assertTrue($backend->get('test'), 'Cache item was set in bin.');
+    $this->assertTrue($backend->get('test2'), 'Cache item was set in bin.');
 
-        $this->assertFalse($backend->get('test1'));
-        $this->assertFalse($backend->get('test2'));
-        $this->assertFalse($backend->get('test3'));
+    $backend->deleteTags(array('test_tag:1'));
+
+    // Test that cache entry has been deleted in multiple bins.
+    $this->assertFalse($backend->get('test'), 'Tag invalidation affected item in bin.');
+
+    // Test that only one tag deletion has occurred.
+    $this->assertTrue($backend->get('test2'), 'Only one tag was removed.');
+  }
+
+  /**
+   * Flushing more than 20 elements should switch to a pipeline that
+   * sends multiple DEL batches.
+   */
+  public function testDeleteALot() {
+    $backend = $this->getBackend();
+
+    $cids = array();
+
+    for ($i = 0; $i < 100; ++$i) {
+      $cids[] = $cid = 'test' . $i;
+      $backend->set($cid, 42, Cache::PERMANENT);
     }
 
-    /**
-     * Test that the flush nothing flush mode flushes nothing.
-     */
-    public function testFlushIsNothing()
-    {
-        global $conf;
+    $backend->deleteMultiple($cids);
 
-        $conf['redis_flush_mode_cache'] = 0;
-        $backend = $this->getBackend();
-
-        $this->assertEqual(Redis_Cache_Base::FLUSH_NOTHING, $backend->getClearMode());
-
-        $backend->set('test4', 42, CACHE_PERMANENT);
-        $backend->set('test5', 'foo', CACHE_TEMPORARY);
-        $backend->set('test6', 'bar', time() + 10);
-
-        $backend->clear();
-
-        $cache = $backend->get('test4');
-        $this->assertNotEqual(false, $cache);
-        $this->assertEqual($cache->data, 42);
-        $cache = $backend->get('test5');
-        $this->assertNotEqual(false, $cache);
-        $this->assertEqual($cache->data, 'foo');
-        $cache = $backend->get('test6');
-        $this->assertNotEqual(false, $cache);
-        $this->assertEqual($cache->data, 'bar');
+    foreach ($cids as $cid) {
+      $this->assertFalse($backend->get($cid));
     }
+  }
 
-    /**
-     * Tests that with a default cache lifetime temporary non expired
-     * items are kept even when in temporary flush mode.
-     */
-    public function testFlushIsTemporaryWithLifetime()
-    {
-        global $conf;
-
-        $conf['redis_flush_mode_cache'] = 1;
-        $conf['cache_lifetime'] = 1000;
-        $backend = $this->getBackend();
-
-        $this->assertEqual(Redis_Cache_Base::FLUSH_TEMPORARY, $backend->getClearMode());
-
-        $backend->set('test7', 42, CACHE_PERMANENT);
-        $backend->set('test8', 'foo', CACHE_TEMPORARY);
-        $backend->set('test9', 'bar', time() + 1000);
-
-        $backend->clear();
-
-        $cache = $backend->get('test7');
-        $this->assertNotEqual(false, $cache);
-        $this->assertEqual($cache->data, 42);
-        $cache = $backend->get('test8');
-        $this->assertNotEqual(false, $cache);
-        $this->assertEqual($cache->data, 'foo');
-        $cache = $backend->get('test9');
-        $this->assertNotEqual(false, $cache);
-        $this->assertEqual($cache->data, 'bar');
-    }
-
-    /**
-     * Tests that with no default cache lifetime all temporary items are
-     * droppped when in temporary flush mode.
-     */
-    public function testFlushIsTemporaryWithoutLifetime()
-    {
-        global $conf;
-
-        $conf['redis_flush_mode_cache'] = 1;
-        $conf['cache_lifetime'] = 0;
-        $backend = $this->getBackend();
-
-        $this->assertEqual(Redis_Cache_Base::FLUSH_TEMPORARY, $backend->getClearMode());
-
-        $backend->set('test10', 42, CACHE_PERMANENT);
-        $backend->set('test11', 'foo', CACHE_TEMPORARY);
-        $backend->set('test12', 'bar', time() + 10);
-
-        $backend->clear();
-
-        $cache = $backend->get('test10');
-        $this->assertNotEqual(false, $cache);
-        $this->assertEqual($cache->data, 42);
-        $this->assertFalse($backend->get('test11'));
-        $this->assertFalse($backend->get('test12'));
-    }
-
-    /**
-     * Flushing more than 20 elements should switch to a pipeline that
-     * sends multiple DEL batches.
-     */
-    public function testFlushALot()
-    {
-        global $conf;
-
-        $conf['redis_flush_mode_cache'] = 2;
-        $backend = $this->getBackend();
-
-        $cids = array();
-
-        for ($i = 0; $i < 100; ++$i) {
-            $cids[] = $cid = 'test' . $i;
-            $backend->set($cid, 42, CACHE_PERMANENT);
-        }
-
-        $backend->clear('*', true);
-
-        foreach ($cids as $cid) {
-            $this->assertFalse($backend->get($cid));
-        }
-    }
 }

@@ -29,7 +29,7 @@ class RedisSettingsForm extends ConfigFormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
     $form = parent::buildForm($form, $form_state);
 
-    $config = $this->configFactory->get('redis');
+    $config = $this->configFactory->get('redis.settings');
 
     $form['connection'] = array(
       '#type' => 'fieldset',
@@ -81,16 +81,16 @@ class RedisSettingsForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $config = $this->configFactory->get('redis');
+    $config = $this->configFactory->get('redis.settings');
 
     $string_values = array('host', 'interface');
     foreach ($string_values as $name) {
       // Empty check is sufficient to verify that the field is indeed empty.
-      if (empty($form_state['values'][$name])) {
+      if (!$value = $form_state->getValue($name)) {
         $config->clear('connection.' . $name);
       }
       else {
-        $config->set('connection.' . $name);
+        $config->set('connection.' . $name, $value);
       }
     }
 
@@ -99,13 +99,16 @@ class RedisSettingsForm extends ConfigFormBase {
       // Numeric values can be both of NULL or 0 (NULL meaning the value is not
       // not set and the client will use the default, while 0 has a business
       // meaning and should be kept as is).
-      if ('0' !== $form_state['values'][$name] && empty($form_state['values'][$name])) {
+      if ('0' !== $form_state->getValue($name) && empty($form_state->getValue($name))) {
         $config->clear('connection.' . $name);
       }
       else {
-        $config->set('connection.' . $name);
+        $config->set('connection.' . $name, (int) $form_state->getValue($name));
       }
     }
+
+    // Save configuration.
+    $config->save();
   }
 
 }

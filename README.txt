@@ -55,11 +55,9 @@ Quick setup
 Here is a simple yet working easy way to setup the module.
 This method will Drupal to use Redis for all caches and locks.
 
-  $conf['redis_client_interface'] = 'PhpRedis'; // Can be "Predis".
-  $conf['redis_client_host']      = '1.2.3.4';  // Your Redis instance hostname.
-  $conf['lock_inc']               = 'sites/all/modules/redis/redis.lock.inc';
-  $conf['cache_backends'][]       = 'sites/all/modules/redis/redis.autoload.inc';
-  $conf['cache_default_class']    = 'Redis_Cache';
+  $settings['redis.connection']['interface'] = 'PhpRedis'; // Can be "Predis".
+  $settings['redis.connection']['host']      = '1.2.3.4';  // Your Redis instance hostname.
+  $settings['cache']['default'] = 'cache.backend.redis';
 
 See next chapters for more information.
 
@@ -79,11 +77,11 @@ Choose the Redis client library to use
 
 Add into your settings.php file:
 
-  $conf['redis_client_interface']      = 'PhpRedis';
+  $settings['redis.connection']['interface'] = 'PhpRedis';
 
 You can replace 'PhpRedis' with 'Predis', depending on the library you chose. 
 
-Note that this is optionnal but recommended. If you don't set this variable the
+Note that this is optional but recommended. If you don't set this variable the
 module will proceed to class lookups and attempt to choose the best client
 available, having always a preference for the Predis one.
 

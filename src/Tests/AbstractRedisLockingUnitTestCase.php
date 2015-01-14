@@ -7,12 +7,12 @@
 
 namespace Drupal\redis\Tests;
 
-use Drupal\simpletest\DrupalUnitTestBase;
+use Drupal\simpletest\KernelTestBase;
 
 /**
  * Base implementation for locking functionnal testing.
  */
-abstract class AbstractRedisLockingUnitTestCase extends DrupalUnitTestBase
+abstract class AbstractRedisLockingUnitTestCase extends KernelTestBase
 {
     /**
      * Ensure lock flush at tear down.

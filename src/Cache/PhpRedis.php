@@ -85,12 +85,13 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
+    Cache::validateTags($tags);
     $entry = (object) array(
       'cid' => $cid,
       'created' => REQUEST_TIME,
       'expire' => $expire,
       'data' => $data,
-      'tags' => $this->flattenTags($tags),
+      'tags' => $tags,
     );
     $this->replace($this->getKey($cid), $entry);
   }
@@ -130,7 +131,7 @@ class PhpRedis extends CacheBase {
   public function deleteTags(array $tags) {
     $client = ClientFactory::getClient();
     $pipe = $client->multi(\Redis::PIPELINE);
-    foreach ($this->flattenTags($tags) as $tag) {
+    foreach ($tags as $tag) {
       $pipe->sunionstore($this->getDeletedMetaSet(), $this->getKeysByTagSet($tag));
     }
     $pipe->exec();
@@ -170,7 +171,7 @@ class PhpRedis extends CacheBase {
   public function invalidateTags(array $tags) {
     $client = ClientFactory::getClient();
     $pipe = $client->multi(\Redis::PIPELINE);
-    foreach ($this->flattenTags($tags) as $tag) {
+    foreach ($tags as $tag) {
       $pipe->sunionstore($this->getStaleMetaSet(), $this->getKeysByTagSet($tag));
     }
     $pipe->exec();
@@ -240,7 +241,7 @@ class PhpRedis extends CacheBase {
       $pipe->set($key, $serialized);
       $pipe->sadd($this->getTagsByKeySet($key), $this->getTagForBin());
       $pipe->sadd($this->getKeysByTagSet($this->getTagForBin()), $key);
-      foreach ($this->flattenTags($entry->tags) as $tag) {
+      foreach ($entry->tags as $tag) {
         $pipe->sadd($this->getTagsByKeySet($key), $tag);
         $pipe->sadd($this->getKeysByTagSet($tag), $key);
       }
@@ -260,34 +261,6 @@ class PhpRedis extends CacheBase {
     }
 
     return $pipe->exec();
-  }
-
-  /**
-   * 'Flattens' a tags array into an array of strings.
-   *
-   * @param array $tags
-   *   Associative array of tags to flatten.
-   *
-   * @return array
-   *   An indexed array of flattened tag identifiers.
-   */
-  protected function flattenTags(array $tags) {
-    if (isset($tags[0])) {
-      return $tags;
-    }
-
-    $flat_tags = array();
-    foreach ($tags as $namespace => $values) {
-      if (is_array($values)) {
-        foreach ($values as $value) {
-          $flat_tags[] = "$namespace:$value";
-        }
-      }
-      else {
-        $flat_tags[] = "$namespace:$values";
-      }
-    }
-    return $flat_tags;
   }
 
 }

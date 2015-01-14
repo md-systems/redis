@@ -6,6 +6,7 @@
  */
 
 namespace Drupal\redis;
+use Drupal\Core\Site\Settings;
 
 /**
  * Common code and client singleton, for all Redis clients.
@@ -85,27 +86,33 @@ class ClientFactory {
    * 
    * @return ClientInterface
    */
-  public static function getClientInterface() {
-    global $conf;
-
-    if (!isset(self::$_clientInterface)) {
-      if (!empty($conf['redis_client_interface'])) {
-        $className = self::getClass(self::REDIS_IMPL_CLIENT, $conf['redis_client_interface']);
+  public static function getClientInterface()
+  {
+    if (!isset(self::$_clientInterface))
+    {
+      $settings = Settings::get('redis.connection', array());
+      if (!empty($settings['interface']))
+      {
+        $className = self::getClass(self::REDIS_IMPL_CLIENT, $settings['interface']);
         self::$_clientInterface = new $className();
       }
-      else if (class_exists('Predis\Client')) {
+      elseif (class_exists('Predis\Client'))
+      {
         // Transparent and abitrary preference for Predis library.
         $className = self::getClass(self::REDIS_IMPL_CLIENT, 'Predis');
         self::$_clientInterface = new $className();
       }
-      else if (class_exists('Redis')) {
+      elseif (class_exists('Redis'))
+      {
         // Fallback on PhpRedis if available.
         $className = self::getClass(self::REDIS_IMPL_CLIENT, 'PhpRedis');
         self::$_clientInterface = new $className();
       }
-      else {
-        if (!isset(self::$_clientInterface)) {
-          throw new Exception("No client interface set.");
+      else
+      {
+        if (!isset(self::$_clientInterface))
+        {
+          throw new \Exception("No client interface set.");
         }
       }
     }
@@ -127,14 +134,20 @@ class ClientFactory {
    */
   public static function getClient() {
     if (!isset(self::$_client)) {
-      global $conf;
+      $settings = Settings::get('redis.connection', array());
+      $settings += array(
+        'host' => self::REDIS_DEFAULT_HOST,
+        'port' => self::REDIS_DEFAULT_PORT,
+        'base' => self::REDIS_DEFAULT_BASE,
+        'password' => self::REDIS_DEFAULT_PASSWORD,
+      );
 
       // Always prefer socket connection.
       self::$_client = self::getClientInterface()->getClient(
-        isset($conf['redis_client_host']) ? $conf['redis_client_host'] : self::REDIS_DEFAULT_HOST,
-        isset($conf['redis_client_port']) ? $conf['redis_client_port'] : self::REDIS_DEFAULT_PORT,
-        isset($conf['redis_client_base']) ? $conf['redis_client_base'] : self::REDIS_DEFAULT_BASE,
-        isset($conf['redis_client_password']) ? $conf['redis_client_password'] : self::REDIS_DEFAULT_PASSWORD);
+        $settings['host'],
+        $settings['port'],
+        $settings['base'],
+        $settings['password']);
     }
 
     return self::$_client;
@@ -152,14 +165,14 @@ class ClientFactory {
    * @return string
    *   Class name, if found.
    * 
-   * @throws Exception
+   * @throws \Exception
    *   If not found.
    */
   public static function getClass($system, $clientName = NULL) {
-    $className = $system . (isset($clientName) ? $clientName : self::getClientName());
+    $className = $system . ($clientName ?: self::getClientName());
 
     if (!class_exists($className)) {
-      throw new Exception($className . " does not exists");
+      throw new \Exception($className . " does not exists");
     }
 
     return $className;

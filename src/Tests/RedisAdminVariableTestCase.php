@@ -12,7 +12,7 @@ use Drupal\simpletest\WebTestBase;
 /**
  * Checks that Redis module variables are correctly type hinted when saved.
  *
- * @group Redis
+ * @group redis
  */
 class RedisAdminVariableTestCase extends WebTestBase {
 

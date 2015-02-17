@@ -1,3 +1,5 @@
 services:
   cache.backend.redis:
     class: Drupal\redis\CacheBackendFactory
+  redis.phpredis.invalidator:
+      class: Drupal\redis\Cache\PhpRedisCacheInvalidator

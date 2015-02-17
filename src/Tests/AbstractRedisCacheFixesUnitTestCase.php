@@ -8,7 +8,7 @@
 namespace Drupal\redis\Tests;
 
 use Drupal\Core\Cache\Cache;
-use Drupal\redis\CacheBase;
+use Drupal\redis\Cache\CacheBase;
 
 /**
  * Bugfixes made over time test class.

@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\redis\ClientFactory.php
+ * Contains \Drupal\redis\ClientFactory.
  */
 
 namespace Drupal\redis;
@@ -71,7 +71,7 @@ class ClientFactory {
    */
   public static function setClient(ClientInterface $interface) {
     if (isset(self::$_client)) {
-      throw new Exception("Once Redis client is connected, you cannot change client proxy instance.");
+      throw new \Exception("Once Redis client is connected, you cannot change client proxy instance.");
     }
 
     self::$_clientInterface = $interface;

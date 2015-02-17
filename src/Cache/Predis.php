@@ -8,7 +8,7 @@
 namespace Drupal\redis\Cache;
 
 use Drupal\Core\Cache\Cache;
-use Drupal\redis\CacheBase;
+use Drupal\redis\Cache\CacheBase;
 
 /**
  * Predis cache backend.

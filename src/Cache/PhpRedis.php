@@ -129,8 +129,10 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function deleteAll() {
-    $tag = $this->getTagForBin();
-    $this->invalidateTags(array($tag));
+    $client = ClientFactory::getClient();
+    // The first entry is where to store, the second is the same,
+    // so that existing entries are kept.
+    $client->sUnionStore($this->getDeletedMetaSet(), $this->getDeletedMetaSet(), $this->getTagForBin());
   }
 
   /**
@@ -156,26 +158,11 @@ class PhpRedis extends CacheBase {
   /**
    * {@inheritdoc}
    */
-  public function invalidateTags(array $tags) {
-    $client = ClientFactory::getClient();
-    // Build a list of cache tags, the first entry is where to store, the
-    // second is the same, so that existing entries are kept.
-    $lists = [$this->getStaleMetaSet(), $this->getStaleMetaSet()];
-
-    // Extend the list for each cache tag.
-    foreach ($tags as $tag) {
-      $lists[] = $this->getKeysByTagSet($tag);
-    }
-    // Execute the command.
-    call_user_func_array(array($client, 'sUnionStore'), $lists);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function invalidateAll() {
-    $tag = $this->getTagForBin();
-    $this->invalidateTags(array($tag));
+    $client = ClientFactory::getClient();
+    // The first entry is where to store, the second is the same,
+    // so that existing entries are kept.
+    $client->sUnionStore($this->getStaleMetaSet(), $this->getStaleMetaSet(), $this->getTagForBin());
   }
 
   /**

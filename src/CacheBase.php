@@ -18,7 +18,7 @@ use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
  * For a detailed history of flush modes see:
  *   https://drupal.org/node/1980250
  */
-abstract class CacheBase extends AbstractBackend implements CacheBackendInterface, CacheTagsInvalidatorInterface {
+abstract class CacheBase extends AbstractBackend implements CacheBackendInterface {
 
   /**
    * Temporary cache items lifetime is infinite.

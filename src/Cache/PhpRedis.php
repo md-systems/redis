@@ -128,21 +128,11 @@ class PhpRedis extends CacheBase {
   /**
    * {@inheritdoc}
    */
-  public function deleteTags(array $tags) {
-    $client = ClientFactory::getClient();
-    $pipe = $client->multi(\Redis::PIPELINE);
-    foreach ($tags as $tag) {
-      $pipe->sunionstore($this->getDeletedMetaSet(), $this->getKeysByTagSet($tag));
-    }
-    $pipe->exec();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function deleteAll() {
-    $tag = $this->getTagForBin();
-    $this->deleteTags(array($tag));
+    $client = ClientFactory::getClient();
+    // The first entry is where to store, the second is the same,
+    // so that existing entries are kept.
+    $client->sUnionStore($this->getDeletedMetaSet(), $this->getDeletedMetaSet(), $this->getKeysByTagSet($this->getTagForBin()));
   }
 
   /**
@@ -168,21 +158,11 @@ class PhpRedis extends CacheBase {
   /**
    * {@inheritdoc}
    */
-  public function invalidateTags(array $tags) {
-    $client = ClientFactory::getClient();
-    $pipe = $client->multi(\Redis::PIPELINE);
-    foreach ($tags as $tag) {
-      $pipe->sunionstore($this->getStaleMetaSet(), $this->getKeysByTagSet($tag));
-    }
-    $pipe->exec();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function invalidateAll() {
-    $tag = $this->getTagForBin();
-    $this->invalidateTags(array($tag));
+    $client = ClientFactory::getClient();
+    // The first entry is where to store, the second is the same,
+    // so that existing entries are kept.
+    $client->sUnionStore($this->getStaleMetaSet(), $this->getStaleMetaSet(), $this->getKeysByTagSet($this->getTagForBin()));
   }
 
   /**

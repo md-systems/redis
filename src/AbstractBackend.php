@@ -20,8 +20,8 @@ abstract class AbstractBackend
     {
         $ret = null;
 
-        if (isset($GLOBALS['drupal_test_info']) && !empty($test_info['test_run_id'])) {
-            $ret = $test_info['test_run_id'];
+        if ($test_prefix = drupal_valid_test_ua()) {
+            $ret = $test_prefix;
         } else {
             $prefixes = ''; //variable_get('cache_prefix', '');
 

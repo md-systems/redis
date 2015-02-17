@@ -132,7 +132,7 @@ class PhpRedis extends CacheBase {
     $client = ClientFactory::getClient();
     // The first entry is where to store, the second is the same,
     // so that existing entries are kept.
-    $client->sUnionStore($this->getDeletedMetaSet(), $this->getDeletedMetaSet(), $this->getTagForBin());
+    $client->sUnionStore($this->getDeletedMetaSet(), $this->getDeletedMetaSet(), $this->getKeysByTagSet($this->getTagForBin()));
   }
 
   /**
@@ -162,7 +162,7 @@ class PhpRedis extends CacheBase {
     $client = ClientFactory::getClient();
     // The first entry is where to store, the second is the same,
     // so that existing entries are kept.
-    $client->sUnionStore($this->getStaleMetaSet(), $this->getStaleMetaSet(), $this->getTagForBin());
+    $client->sUnionStore($this->getStaleMetaSet(), $this->getStaleMetaSet(), $this->getKeysByTagSet($this->getTagForBin()));
   }
 
   /**

@@ -2,4 +2,6 @@ services:
   cache.backend.redis:
     class: Drupal\redis\CacheBackendFactory
   redis.phpredis.invalidator:
-      class: Drupal\redis\Cache\PhpRedisCacheInvalidator
+    class: Drupal\redis\Cache\PhpRedisCacheInvalidator
+    tags:
+      - { name: cache_tags_invalidator }

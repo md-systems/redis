@@ -25,17 +25,6 @@ class PhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
   public static $modules = array('system', 'redis');
 
   /**
-   * {@inheritdoc}
-   */
-  public function setUp() {
-    parent::setUp();
-
-    // Set cache tag invalidator.
-    $backend = $this->getCacheBackend();
-    \Drupal::service('cache_tags.invalidator')->addInvalidator($backend);
-  }
-
-  /**
    * Creates a new instance of PhpRedis cache backend.
    *
    * @return \Drupal\redis\Cache\PhpRedis

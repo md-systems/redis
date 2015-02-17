@@ -128,21 +128,9 @@ class PhpRedis extends CacheBase {
   /**
    * {@inheritdoc}
    */
-  public function deleteTags(array $tags) {
-    $client = ClientFactory::getClient();
-    $pipe = $client->multi(\Redis::PIPELINE);
-    foreach ($tags as $tag) {
-      $pipe->sunionstore($this->getDeletedMetaSet(), $this->getKeysByTagSet($tag));
-    }
-    $pipe->exec();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function deleteAll() {
     $tag = $this->getTagForBin();
-    $this->deleteTags(array($tag));
+    $this->invalidateTags(array($tag));
   }
 
   /**
@@ -170,11 +158,16 @@ class PhpRedis extends CacheBase {
    */
   public function invalidateTags(array $tags) {
     $client = ClientFactory::getClient();
-    $pipe = $client->multi(\Redis::PIPELINE);
+    // Build a list of cache tags, the first entry is where to store, the
+    // second is the same, so that existing entries are kept.
+    $lists = [$this->getStaleMetaSet(), $this->getStaleMetaSet()];
+
+    // Extend the list for each cache tag.
     foreach ($tags as $tag) {
-      $pipe->sunionstore($this->getStaleMetaSet(), $this->getKeysByTagSet($tag));
+      $lists[] = $this->getKeysByTagSet($tag);
     }
-    $pipe->exec();
+    // Execute the command.
+    call_user_func_array(array($client, 'sUnionStore'), $lists);
   }
 
   /**

@@ -19,6 +19,7 @@ class CacheBackendFactory implements CacheFactoryInterface {
    */
   public function get($bin) {
     $class_name = ClientFactory::getClass(ClientFactory::REDIS_IMPL_CACHE);
+    \Drupal::service('redis.phpredis.invalidator')->enable();
     return new $class_name($bin);
   }
 

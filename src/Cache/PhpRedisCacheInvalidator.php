@@ -18,6 +18,13 @@ use Drupal\redis\ClientFactory;
 class PhpRedisCacheInvalidator extends AbstractBackend implements CacheTagsInvalidatorInterface {
 
   /**
+   * Whether the cache tags invalidator is enabled.
+   *
+   * @var bool
+   */
+  protected $enabled = FALSE;
+
+  /**
    * Return the key for the set holding the keys of stale entries.
    */
   protected function getStaleMetaSet() {
@@ -32,13 +39,23 @@ class PhpRedisCacheInvalidator extends AbstractBackend implements CacheTagsInval
   }
 
   /**
+   * Enable the cache tags invalidator.
+   *
+   * Usually called by the factory, when at least one cache bin was requested.
+   *
+   * @param bool $enabled
+   *   Whether the invalidator should be enabled.
+   */
+  public function enable($enabled = TRUE) {
+    $this->enabled = $enabled;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function invalidateTags(array $tags) {
     // Don't do anything if redis is not enabled.
-    // @todo Find a better way to check for this.
-    $cache_settings = Settings::get('cache');
-    if (!isset($cache_settings['default']) || $cache_settings['default'] = 'cache.backend.redis') {
+    if (!$this->enabled) {
       return;
     }
 

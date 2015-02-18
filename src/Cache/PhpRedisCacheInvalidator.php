@@ -8,6 +8,7 @@
 namespace Drupal\redis\Cache;
 
 use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
+use Drupal\Core\Site\Settings;
 use Drupal\redis\AbstractBackend;
 use Drupal\redis\ClientFactory;
 
@@ -34,6 +35,13 @@ class PhpRedisCacheInvalidator extends AbstractBackend implements CacheTagsInval
    * {@inheritdoc}
    */
   public function invalidateTags(array $tags) {
+    // Don't do anything if redis is not enabled.
+    // @todo Find a better way to check for this.
+    $cache_settings = Settings::get('cache');
+    if (!isset($cache_settings['default']) || $cache_settings['default'] = 'cache.backend.redis') {
+      return;
+    }
+
     $client = ClientFactory::getClient();
     // Build a list of cache tags, the first entry is where to store, the
     // second is the same, so that existing entries are kept.

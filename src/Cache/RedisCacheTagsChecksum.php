@@ -9,13 +9,15 @@ namespace Drupal\redis\Cache;
 
 use Drupal\Core\Cache\CacheTagsChecksumInterface;
 use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
-use Drupal\redis\AbstractBackend;
 use Drupal\redis\ClientFactory;
+use Drupal\redis\RedisPrefixTrait;
 
 /**
  * Cache tags invalidations checksum implementation that uses redis.
  */
-class RedisCacheTagsChecksum extends AbstractBackend implements CacheTagsChecksumInterface, CacheTagsInvalidatorInterface {
+class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInvalidatorInterface {
+
+  use RedisPrefixTrait;
 
   /**
    * Contains already loaded cache invalidations from the database.
@@ -42,7 +44,6 @@ class RedisCacheTagsChecksum extends AbstractBackend implements CacheTagsChecksu
    * Creates a PHpRedis cache backend.
    */
   function __construct(ClientFactory $factory) {
-    parent::__construct();
     $this->client = $factory->getClient();
   }
 
@@ -119,9 +120,15 @@ class RedisCacheTagsChecksum extends AbstractBackend implements CacheTagsChecksu
 
   /**
    * Return the key for the given cache tag.
+   *
+   * @param string $tag
+   *   The cache tag.
+   *
+   * @return string
+   *   The prefixed cache tag.
    */
   protected function getTagKey($tag) {
-    return parent::getKey('cachetags:' . $tag);
+    return $this->getPrefix() . ':cachetags:' . $tag;
   }
 
 }

@@ -53,7 +53,12 @@ class PhpRedis extends CacheBase {
     }
 
     $return = array();
+
+    // Build the list of keys to fetch.
     $keys = array_map(array($this, 'getKey'), $cids);
+
+    // Optimize for the common case when only a single cache entry needs to
+    // be fetched, no pipeline is needed then.
     if (count($keys) > 1) {
       $pipe = $this->client->multi(\Redis::PIPELINE);
       foreach ($keys as $key) {
@@ -65,9 +70,11 @@ class PhpRedis extends CacheBase {
       $result = [$this->client->hGetAll(reset($keys))];
     }
 
+    // Loop over the cid values to ensure numeric indexes.
     foreach (array_values($cids) as $index => $key) {
+      // Check if a valid result was returned from Redis.
       if (isset($result[$index]) && is_array($result[$index])) {
-        // Map the cache ID back to the original.
+        // Check expiration and invalidation and convert into an object.
         $item = $this->expandEntry($result[$index], $allow_invalid);
         if ($item) {
           $return[$item->cid] = $item;
@@ -85,6 +92,7 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
+    // Build the cache item and save it as a hash array.
     $entry = $this->createEntryHash($cid, $data, $expire, $tags);
     $this->client->hMset($this->getKey($cid), $entry);
   }
@@ -101,6 +109,10 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function deleteAll() {
+    // The last delete timestamp is in milliseconds, ensure that no cache
+    // was written in the same millisecond.
+    // @todo This is needed to make the tests pass, is this safe enough for real
+    //   usage?
     usleep(1000);
     $this->lastDeleteAll = round(microtime(TRUE), 3);
     $this->client->set($this->getKey(static::LAST_DELETE_ALL_KEY), $this->lastDeleteAll);
@@ -110,6 +122,8 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function invalidateMultiple(array $cids) {
+    // Loop over all cache items, they are stored as a hash, so we can access
+    // the valid flag directly, only write if it exists and is not 0.
     foreach ($cids as $cid) {
       $key = $this->getKey($cid);
       if ($this->client->hGet($key, 'valid')) {
@@ -122,6 +136,7 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function invalidateAll() {
+    // To invalidate the whole bin, we invalidate a special tag for this bin.
     $this->checksumProvider->invalidateTags([$this->getTagForBin()]);
   }
 
@@ -139,6 +154,7 @@ class PhpRedis extends CacheBase {
    *   The last delete timestamp as a timestamp with a millisecond precision.
    */
   protected function getLastDeleteAll() {
+    // Cache the last delete all timestamp.
     if ($this->lastDeleteAll === NULL) {
       $this->lastDeleteAll = (float) $this->client->get($this->getKey(static::LAST_DELETE_ALL_KEY));
     }
@@ -156,6 +172,8 @@ class PhpRedis extends CacheBase {
    * @return array
    */
   protected function createEntryHash($cid, $data, $expire = Cache::PERMANENT, array $tags) {
+    // Always add a cache tag for the current bin, so that we can use that for
+    // invalidateAll().
     $tags[] = $this->getTagForBin();
     Cache::validateTags($tags);
     $hash = array(

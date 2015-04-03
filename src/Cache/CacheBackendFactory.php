@@ -9,7 +9,6 @@ namespace Drupal\redis\Cache;
 
 use Drupal\Core\Cache\CacheFactoryInterface;
 use Drupal\Core\Cache\CacheTagsChecksumInterface;
-use Drupal\Core\Cache\RedisCacheTagsChecksum;
 use Drupal\redis\ClientFactory;
 
 /**

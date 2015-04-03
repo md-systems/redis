@@ -41,7 +41,7 @@ class PhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
    *   A new PhpRedis cache backend.
    */
   protected function createCacheBackend($bin) {
-    $cache = new PhpRedis($bin);
+    $cache = new PhpRedis($bin, \Drupal::service('redis.factory')->getClient());
     $cache->setMinTtl(10);
     return $cache;
   }

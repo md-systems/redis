@@ -7,8 +7,6 @@
 
 namespace Drupal\redis\Cache;
 
-use Drupal\redis\CacheBase;
-use Drupal\redis\ClientFactory;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
 
@@ -18,14 +16,25 @@ use Drupal\Core\Cache\CacheBackendInterface;
 class PhpRedis extends CacheBase {
 
   /**
+   * @var \Redis
+   */
+  protected $client;
+
+  /**
+   * Creates a PHpRedis cache backend.
+   */
+  function __construct($bin, \Redis $client) {
+    parent::__construct($bin);
+    $this->client = $client;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function get($cid, $allow_invalid = FALSE) {
+    $key = $this->getKey($cid);
 
-    $client = ClientFactory::getClient();
-    $key    = $this->getKey($cid);
-
-    list($cached, $deleted, $stale) = $client->multi(\Redis::PIPELINE)
+    list($cached, $deleted, $stale) = $this->client->multi(\Redis::PIPELINE)
       ->get($key)
       ->sismember($this->getDeletedMetaSet(), $key)
       ->sismember($this->getStaleMetaSet(), $key)
@@ -47,13 +56,10 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function getMultiple(&$cids, $allow_invalid = FALSE) {
-
-    $client = ClientFactory::getClient();
-
     $ret = array();
     $keys = array_map(array($this, 'getKey'), $cids);
 
-    $pipe = $client->multi(\Redis::PIPELINE);
+    $pipe = $this->client->multi(\Redis::PIPELINE);
     foreach ($keys as $key) {
       $pipe->get($key);
       $pipe->sismember($this->getDeletedMetaSet(), $key);
@@ -109,16 +115,14 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function delete($cid) {
-    $client = ClientFactory::getClient();
-    $client->sadd($this->getDeletedMetaSet(), $this->getKey($cid));
+    $this->client->sadd($this->getDeletedMetaSet(), $this->getKey($cid));
   }
 
   /**
    * {@inheritdoc}
    */
   public function deleteMultiple(array $cids) {
-    $client = ClientFactory::getClient();
-    $pipe = $client->multi(\Redis::PIPELINE);
+    $pipe = $this->client->multi(\Redis::PIPELINE);
     foreach ($cids as $cid) {
       $pipe->sadd($this->getDeletedMetaSet(), $this->getKey($cid));
     }
@@ -129,26 +133,23 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function deleteAll() {
-    $client = ClientFactory::getClient();
     // The first entry is where to store, the second is the same,
     // so that existing entries are kept.
-    $client->sUnionStore($this->getDeletedMetaSet(), $this->getDeletedMetaSet(), $this->getKeysByTagSet($this->getTagForBin()));
+    $this->client->sUnionStore($this->getDeletedMetaSet(), $this->getDeletedMetaSet(), $this->getKeysByTagSet($this->getTagForBin()));
   }
 
   /**
    * {@inheritdoc}
    */
   public function invalidate($cid) {
-    $client = ClientFactory::getClient();
-    $client->sadd($this->getStaleMetaSet(), $this->getKey($cid));
+    $this->client->sadd($this->getStaleMetaSet(), $this->getKey($cid));
   }
 
   /**
    * {@inheritdoc}
    */
   public function invalidateMultiple(array $cids) {
-    $client = ClientFactory::getClient();
-    $pipe = $client->multi(\Redis::PIPELINE);
+    $pipe = $this->client->multi(\Redis::PIPELINE);
     foreach ($cids as $cid) {
       $pipe->sadd($this->getStaleMetaSet(), $this->getKey($cid));
     }
@@ -159,22 +160,19 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function invalidateAll() {
-    $client = ClientFactory::getClient();
     // The first entry is where to store, the second is the same,
     // so that existing entries are kept.
-    $client->sUnionStore($this->getStaleMetaSet(), $this->getStaleMetaSet(), $this->getKeysByTagSet($this->getTagForBin()));
+    $this->client->sUnionStore($this->getStaleMetaSet(), $this->getStaleMetaSet(), $this->getKeysByTagSet($this->getTagForBin()));
   }
 
   /**
    * {@inheritdoc}
    */
   public function garbageCollection() {
-    $client = ClientFactory::getClient();
-
-    $n = $client->scard($this->getDeletedMetaSet());
+    $n = $this->client->scard($this->getDeletedMetaSet());
     for ($i = 0; $i < $n; $i++) {
-      $client->watch($this->getDeletedMetaSet());
-      $key = $client->srandmember($this->getDeletedMetaSet());
+      $this->client->watch($this->getDeletedMetaSet());
+      $key = $this->client->srandmember($this->getDeletedMetaSet());
       if ($key) {
         $this->replace($key);
       }
@@ -192,10 +190,8 @@ class PhpRedis extends CacheBase {
    * Replace or remove a cache entry.
    */
   protected function replace($key, $entry = NULL) {
-    $client = ClientFactory::getClient();
-
-    $client->watch($key);
-    $old_tags = $client->smembers($this->getTagsByKeySet($key));
+    $this->client->watch($key);
+    $old_tags = $this->client->smembers($this->getTagsByKeySet($key));
 
     $serialized = NULL;
     if ($entry) {
@@ -205,7 +201,7 @@ class PhpRedis extends CacheBase {
       $serialized = serialize($entry);
     }
 
-    $pipe = $client->multi(\Redis::MULTI);
+    $pipe = $this->client->multi(\Redis::MULTI);
 
     // Remove.
     $pipe->del($key);

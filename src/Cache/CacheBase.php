@@ -2,14 +2,16 @@
 
 /**
  * @file
- * Contains \Drupal\redis\CacheBase.
+ * Contains \Drupal\redis\Cache\CacheBase.
  */
 
-namespace Drupal\redis;
+namespace Drupal\redis\Cache;
 
 use \DateInterval;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
+use Drupal\redis\AbstractBackend;
+use Drupal\redis\ClientInterface;
 
 /**
  * Because those objects will be spawned during bootsrap all its configuration
@@ -71,6 +73,11 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
   protected $minTtl = 0;
 
   /**
+   * @var \Drupal\redis\ClientInterface
+   */
+  protected $client;
+
+  /**
    * Get TTL for CACHE_PERMANENT items.
    *
    * @return int
@@ -80,12 +87,9 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
     return $this->permTtl;
   }
 
-  public function __construct($bin) {
-
+  function __construct($bin) {
     parent::__construct();
-
     $this->bin = $bin;
-
     $this->setPermTtl();
   }
 

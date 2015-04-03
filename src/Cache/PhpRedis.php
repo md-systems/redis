@@ -92,10 +92,24 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
+
+    $ttl = $this->getExpiration($expire);
+
+    $key = $this->getKey($cid);
+
+    // If the item is already expired, delete it.
+    if ($ttl <= 0) {
+      $this->delete($key);
+    }
+
     // Build the cache item and save it as a hash array.
     $entry = $this->createEntryHash($cid, $data, $expire, $tags);
-    $this->client->hMset($this->getKey($cid), $entry);
+    $pipe = $this->client->multi(\REdis::PIPELINE);
+    $pipe->hMset($key, $entry);
+    $pipe->expire($key, $ttl);
+    $pipe->exec();
   }
+
 
   /**
    * {@inheritdoc}

@@ -8,6 +8,7 @@
 namespace Drupal\redis\Cache;
 
 use \DateInterval;
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
 use Drupal\redis\AbstractBackend;
@@ -26,11 +27,6 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
    * Temporary cache items lifetime is infinite.
    */
   const LIFETIME_INFINITE = 0;
-
-  /**
-   * Default temporary cache items lifetime.
-   */
-  const LIFETIME_DEFAULT = 0;
 
   /**
    * Default lifetime for permanent items.
@@ -147,6 +143,25 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
     else {
       return parent::getKey($this->bin . ':' . $cid);
     }
+  }
+
+  /**
+   * Calculate the correct expiration time.
+   *
+   * @todo Make the default configurable.
+   *
+   * @param int $expire
+   *   The expiration time provided for the cache set.
+   *
+   * @return int
+   *   The default expiration if expire is PERMANENT or higher than the default.
+   *   May return negative values if the item is already expired.
+   */
+  protected function getExpiration($expire) {
+    if ($expire == Cache::PERMANENT || $expire > static::LIFETIME_PERM_DEFAULT) {
+      return static::LIFETIME_PERM_DEFAULT;
+    }
+    return $expire - REQUEST_TIME;
   }
 
   /**

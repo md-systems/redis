@@ -50,6 +50,11 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
   const KEY_THRESHOLD = 20;
 
   /**
+   * Latest delete all flush KEY name.
+   */
+  const LAST_DELETE_ALL_KEY = '_redis_last_delete_all';
+
+  /**
    * @var string
    */
   protected $bin;
@@ -91,6 +96,15 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
     parent::__construct();
     $this->bin = $bin;
     $this->setPermTtl();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function get($cid, $allow_invalid = FALSE) {
+    $cids = array($cid);
+    $cache = $this->getMultiple($cids, $allow_invalid);
+    return reset($cache);
   }
 
   /**

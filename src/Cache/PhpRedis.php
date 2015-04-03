@@ -8,7 +8,6 @@
 namespace Drupal\redis\Cache;
 
 use Drupal\Core\Cache\Cache;
-use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Cache\CacheTagsChecksumInterface;
 
 /**
@@ -93,22 +92,6 @@ class PhpRedis extends CacheBase {
   /**
    * {@inheritdoc}
    */
-  public function setMultiple(array $items) {
-    foreach ($items as $cid => $item) {
-      $this->set($cid, $item['data'], isset($item['expire']) ? $item['expire'] : CacheBackendInterface::CACHE_PERMANENT, isset($item['tags']) ? $item['tags'] : array());
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function delete($cid) {
-    $this->deleteMultiple([$cid]);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function deleteMultiple(array $cids) {
     $keys = array_map(array($this, 'getKey'), $cids);
     $this->client->del($keys);
@@ -121,13 +104,6 @@ class PhpRedis extends CacheBase {
     usleep(1000);
     $this->lastDeleteAll = round(microtime(TRUE), 3);
     $this->client->set($this->getKey(static::LAST_DELETE_ALL_KEY), $this->lastDeleteAll);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function invalidate($cid) {
-    $this->invalidateMultiple([$cid]);
   }
 
   /**
@@ -153,21 +129,7 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function garbageCollection() {
-    /*$n = $this->client->scard($this->getDeletedMetaSet());
-    for ($i = 0; $i < $n; $i++) {
-      $this->client->watch($this->getDeletedMetaSet());
-      $key = $this->client->srandmember($this->getDeletedMetaSet());
-      if ($key) {
-        $this->replace($key);
-      }
-    }*/
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function removeBin() {
-    $this->deleteAll();
+    // @todo Do we need to do anything here?
   }
 
   /**

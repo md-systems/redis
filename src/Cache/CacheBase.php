@@ -108,6 +108,36 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
   }
 
   /**
+   * {@inheritdoc}
+   */
+  public function setMultiple(array $items) {
+    foreach ($items as $cid => $item) {
+      $this->set($cid, $item['data'], isset($item['expire']) ? $item['expire'] : CacheBackendInterface::CACHE_PERMANENT, isset($item['tags']) ? $item['tags'] : array());
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function delete($cid) {
+    $this->deleteMultiple([$cid]);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function removeBin() {
+    $this->deleteAll();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function invalidate($cid) {
+    $this->invalidateMultiple([$cid]);
+  }
+
+  /**
    * Return the key for the given cache-id.
    */
   public function getKey($cid = NULL) {
@@ -117,34 +147,6 @@ abstract class CacheBase extends AbstractBackend implements CacheBackendInterfac
     else {
       return parent::getKey($this->bin . ':' . $cid);
     }
-  }
-
-  /**
-   * Return the key for the set holding the keys of deletable entries.
-   */
-  protected function getDeletedMetaSet() {
-    return parent::getKey('meta/deleted');
-  }
-
-  /**
-   * Return the key for the set holding the keys of stale entries.
-   */
-  protected function getStaleMetaSet() {
-    return parent::getKey('meta/stale');
-  }
-
-  /**
-   * Return the key for the keys-by-tag set.
-   */
-  protected function getKeysByTagSet($tag) {
-    return parent::getKey('meta/keysByTag:' . $tag);
-  }
-
-  /**
-   * Return the key for the tags-by-cid set.
-   */
-  protected function getTagsByKeySet($key) {
-    return parent::getKey('meta/tagsByKey:' . $key);
   }
 
   /**

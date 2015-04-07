@@ -51,8 +51,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    * {@inheritdoc}
    */
   public function invalidateTags(array $tags) {
-    $multi =$this->client->multi(\Redis::PIPELINE);
-    $execute = FALSE;
+    $keys_to_increment = [];
     foreach ($tags as $tag) {
       // Only invalidate tags once per request unless they are written again.
       if (isset($this->invalidatedTags[$tag])) {
@@ -60,10 +59,13 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
       }
       $this->invalidatedTags[$tag] = TRUE;
       unset($this->tagCache[$tag]);
-      $multi->incr($this->getTagKey($tag));
-      $execute = TRUE;
+      $keys_to_increment[] = $this->getTagKey($tag);
     }
-    if ($execute) {
+    if ($keys_to_increment) {
+      $multi = $this->client->multi(\Redis::PIPELINE);
+      foreach ($keys_to_increment as $key) {
+        $multi->incr($key);
+      }
       $multi->exec();
     }
   }

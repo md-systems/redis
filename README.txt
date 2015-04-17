@@ -1,6 +1,21 @@
 Redis cache backends
 ====================
 
+To use the redis cache tag checksum implementation, put this in
+sites/default/services.yml or any other yml file that is loaded after
+core.services.yml:
+
+services:
+  cache_tags.invalidator.checksum:
+    class: Drupal\redis\Cache\RedisCacheTagsChecksum
+    arguments: ['@redis.factory']
+    tags:
+      - { name: cache_tags_invalidator }
+
+@todo Update this README.
+
+
+
 This package provides two different Redis cache backends. If you want to use
 Redis as cache backend, you have to choose one of the two, but you cannot use
 both at the same time. Well, it will be technically possible, but it would be

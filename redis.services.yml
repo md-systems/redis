@@ -1,10 +1,6 @@
 services:
   cache.backend.redis:
     class: Drupal\redis\Cache\CacheBackendFactory
-    arguments: ['@redis.factory']
-  redis.phpredis.invalidator:
-    class: Drupal\redis\Cache\PhpRedisCacheInvalidator
-    tags:
-      - { name: cache_tags_invalidator }
+    arguments: ['@redis.factory', '@cache_tags.invalidator.checksum']
   redis.factory:
     class: Drupal\redis\ClientFactory

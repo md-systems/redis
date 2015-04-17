@@ -83,7 +83,7 @@ class ClientFactory {
    * If you are using a lock, session or cache backend using one of the Redis
    * client implementation, this will be overrided at early bootstrap phase
    * and configuration will be ignored.
-   * 
+   *
    * @return ClientInterface
    */
   public static function getClientInterface()

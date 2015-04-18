@@ -17,6 +17,11 @@ use Drupal\Core\Cache\CacheTagsChecksumInterface;
 class ShardedPhpRedis extends CacheBase {
 
   /**
+   * A bit more than 10 minutes.
+   */
+  const INVALID_TTL = 666;
+
+  /**
    * @var \Redis
    */
   protected $client;
@@ -91,6 +96,7 @@ class ShardedPhpRedis extends CacheBase {
 
     $entryKey = $this->getKey($cid);
     $item = $this->client->hGetAll($entryKey);
+    $time = time();
 
     if (!$item) {
       return FALSE;
@@ -102,16 +108,21 @@ class ShardedPhpRedis extends CacheBase {
     $item->expire = (int)$item->expire;
     $item->ttl = (int)$item->ttl;
 
-    if (!$item->valid && $item->ttl === 600 ) {
+    if (!$item->valid && $item->ttl === self::INVALID_TTL ) {
       // @todo This is ugly but we are int the case where an already expired
       // entry was set previously, this means that we are probably in the unit
       // tests and we should not delete this entry to make core tests happy.
       if (!$allow_invalid) {
+        if ($item->created < $time - $item->ttl) {
+          // Force delete 10 mintes after the invalidation to keep some
+          // cleanup level for this ugly hack.
+          $this->client->del($entryKey);
+        }
         return FALSE;
       }
     } else if ($item->valid && !$allow_invalid) {
 
-      if (Cache::PERMANENT !== $item->expire && $item->expire < time()) {
+      if (Cache::PERMANENT !== $item->expire && $item->expire < $time) {
         $this->client->del($entryKey);
         return FALSE;
       }
@@ -174,28 +185,35 @@ class ShardedPhpRedis extends CacheBase {
     }
 
     $valid = true;
+    $maxTtl = $this->getPermTtl();
 
     if (Cache::PERMANENT !== $expire) {
+
       if ($expire <= $time) {
         // And existing entry if any is stalled
         // $this->client->del($entryKey);
         // return;
-        // @todo I am definitely not fan of this, this only serves
-        // the purpose of letting the generic core unit tests to
-        // work with us.
-        $valid = false;
         // @todo This might happen during tests to check that invalid entries
         // can be fetched, I do not like this. This invalid features mostly
         // serves some edge caching cases, let's set a very small cache life
-        // time.
-        $ttl = 600;
+        // time. 10 minutes is enought. See ::invalidate() method comment.
+        $valid = false;
+        $ttl = self::INVALID_TTL;
       } else {
         $ttl = $expire - $time;
       }
+
+      if ($maxTtl < $ttl) {
+        $ttl = $maxTtl;
+      }
+    // This feature might be deactivated by the site admin.
+    } else if ($maxTtl !== self::LIFETIME_INFINITE) {
+      $ttl = $maxTtl;
     } else {
       $ttl = $expire;
     }
 
+    //getExpiration
     // 0 for tag means it never has been deleted
     $checksum = $this->checksumProvider->getCurrentChecksum($tags);
 
@@ -258,10 +276,13 @@ class ShardedPhpRedis extends CacheBase {
   public function invalidate($cid) {
     $entryKey = $this->getKey($cid);
     if ($this->client->hGet($entryKey, 'valid')) {
+      // @todo Note that the original algorithm was to delete the entry at
+      // this point instead of just invalidate it, but the bigger core unit
+      // test method actually goes down that path, so as a temporary solution
+      // we are just invalidating it this way.
       $this->client->hMset($entryKey, [
         'valid' => 0,
-        // @todo This one if for unit tests only, sorry...
-        'ttl' => 600,
+        'ttl' => self::INVALID_TTL,
       ]);
     }
   }
@@ -279,7 +300,6 @@ class ShardedPhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function invalidateAll() {
-    // @todo Will this make tests fail again?! 
     $this->setLastFlushTime();
   }
 
@@ -287,16 +307,17 @@ class ShardedPhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function garbageCollection() {
-    // Ah! Ah! Seriously...
+    // No need for garbage collection, Redis will do it for us based upon
+    // the entries TTL. Also, knowing that in a sharded environment we cannot
+    // predict where entries are going to be stored, especially when doing
+    // proxy assisted sharding, we can't really do anything in here.
   }
 
   /**
    * {@inheritdoc}
    */
   public function removeBin() {
-    // I'm sorry but this bin will have to wait the max TTL has been reached
-    // for all items: in the sharded environement, especially when there is
-    // a sharding proxy there is no way on earth we can scan our data. 
+    $this->deleteAll();
   }
 
 }

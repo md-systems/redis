@@ -127,6 +127,7 @@ class PhpRedis extends CacheBase {
     // was written in the same millisecond.
     // @todo This is needed to make the tests pass, is this safe enough for real
     //   usage?
+    // @todo (pounard) Using the getNextIncrement() will make it safe.
     usleep(1000);
     $this->lastDeleteAll = round(microtime(TRUE), 3);
     $this->client->set($this->getKey(static::LAST_DELETE_ALL_KEY), $this->lastDeleteAll);

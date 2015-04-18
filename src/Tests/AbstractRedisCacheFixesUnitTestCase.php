@@ -35,7 +35,7 @@ abstract class AbstractRedisCacheFixesUnitTestCase extends AbstractRedisCacheUni
     $this->assertIdentical('bar', $data->data);
 
     // Expiring entry with negative lifetime.
-    $backend->set('test3', 'baz', REQUEST_TIME - 100);
+    $backend->set('test3', 'baz', time() - 100);
     $data = $backend->get('test3');
     $this->assertEqual(false, $data);
   }

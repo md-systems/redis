@@ -21,7 +21,9 @@ use Drupal\redis\RedisPrefixTrait;
  */
 abstract class CacheBase implements CacheBackendInterface {
 
-  use RedisPrefixTrait;
+  use RedisPrefixTrait {
+    getKey as getParentKey;
+  }
 
   /**
    * Temporary cache items lifetime is infinite.
@@ -133,18 +135,6 @@ abstract class CacheBase implements CacheBackendInterface {
   }
 
   /**
-   * Return the key for the given cache key.
-   */
-  public function getKey($cid = NULL) {
-    if (NULL === $cid) {
-      return $this->getPrefix() . ':' . $this->bin;
-    }
-    else {
-      return $this->getPrefix() . ':' . $this->bin . ':' . $cid;
-    }
-  }
-
-  /**
    * Calculate the correct expiration time.
    *
    * @param int $expire
@@ -158,7 +148,7 @@ abstract class CacheBase implements CacheBackendInterface {
     if ($expire == Cache::PERMANENT || $expire > $this->permTtl) {
       return $this->permTtl;
     }
-    return $expire - REQUEST_TIME;
+    return $expire - time();
   }
 
   /**
@@ -203,6 +193,17 @@ abstract class CacheBase implements CacheBackendInterface {
         }
       }
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getKey($parts) {
+    if (is_string($parts)) {
+      $parts = [$parts];
+    }
+    array_unshift($parts, $this->bin);
+    return $this->getParentKey($parts);
   }
 
 }

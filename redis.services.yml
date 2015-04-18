@@ -4,3 +4,6 @@ services:
     arguments: ['@redis.factory', '@cache_tags.invalidator.checksum']
   redis.factory:
     class: Drupal\redis\ClientFactory
+  redis.phpredis.invalidator:
+    class: Drupal\redis\Cache\RedisCacheTagsChecksum
+    arguments: ['@redis.factory']

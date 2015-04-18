@@ -94,4 +94,44 @@ trait RedisPrefixTrait {
     return $this->prefix;
   }
 
+  /**
+   * From the given timestamp, with arbitrary increment as decimal, get
+   * the decimal value
+   *
+   * @param int|string $timestamp
+   *   "TIMESTAMP[.INCREMENT]" string
+   *
+   * @return string
+   *   "TIMESTAMP.INCREMENT" string.
+   */
+  public function getNextIncrement($timestamp = null) {
+
+    if (!$timestamp) {
+      return time() . '.000';
+    }
+
+    if (false !== ($pos = strpos($timestamp, '.'))) {
+      $inc = substr($timestamp, $pos + 1, 3);
+
+      return ((int)$timestamp) . '.' . str_pad($inc + 1, 3, '0', STR_PAD_LEFT);
+    }
+
+    return $timestamp . '.000';
+  }
+
+  /**
+   * Get prefixed key
+   *
+   * @param string[] $parts
+   *   Arbitrary number of strings to compose the key
+   *
+   * @return string
+   */
+  public function getKey($parts = []) {
+    if (!is_array($parts)) {
+      $parts = [$parts];
+    }
+    array_unshift($parts, $this->getPrefix());
+    return implode(':', $parts);
+  }
 }

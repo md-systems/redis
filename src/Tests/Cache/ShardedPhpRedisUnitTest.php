@@ -38,7 +38,6 @@ class ShardedPhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
     }
   }
 
-
   /**
    * Creates a new instance of PhpRedis cache backend.
    *
@@ -54,7 +53,6 @@ class ShardedPhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
     $cache->setMinTtl(10);
     return $cache;
   }
-
 
   /**
    * Tests Drupal\Core\Cache\CacheBackendInterface::invalidateTags().

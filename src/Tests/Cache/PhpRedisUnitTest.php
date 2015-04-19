@@ -37,7 +37,6 @@ class PhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
     }
   }
 
-
   /**
    * Creates a new instance of PhpRedis cache backend.
    *

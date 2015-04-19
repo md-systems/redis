@@ -24,7 +24,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    *
    * @var array
    */
-  protected $tagCache = array();
+  protected $tagCache = [];
 
   /**
    * A list of tags that have already been invalidated in this request.
@@ -33,7 +33,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    *
    * @var array
    */
-  protected $invalidatedTags = array();
+  protected $invalidatedTags = [];
 
   /**
    * @var \Redis
@@ -52,9 +52,20 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    */
   public function invalidateTags(array $tags) {
     foreach ($tags as $tag) {
+      if (isset($this->invalidatedTags[$tag])) {
+        // Only invalidate tags once per request unless they are written again.
+        continue;
+      }
+
       $tagKey = $this->getKey(['tag', $tag]);
       $current = $this->client->get($tagKey);
-      $this->client->set($tagKey, $this->getNextIncrement($current));
+
+      $current = $this->getNextIncrement($current);
+      $this->client->set($tagKey, $current);
+
+      // Rightly populate the tag cache with the new values.
+      $this->invalidatedTags[$tag] = TRUE;
+      $this->tagCache[$tag] = $current;
     }
   }
 
@@ -62,9 +73,6 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    * {@inheritdoc}
    */
   public function getCurrentChecksum(array $tags) {
-    /*
-     * @todo Restore cache
-     *
     // Remove tags that were already invalidated during this request from the
     // static caches so that another invalidation can occur later in the same
     // request. Without that, written cache items would not be invalidated
@@ -72,7 +80,6 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
     foreach ($tags as $tag) {
       unset($this->invalidatedTags[$tag]);
     }
-     */
     return $this->calculateChecksum($tags);
   }
 
@@ -80,13 +87,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    * {@inheritdoc}
    */
   public function isValid($checksum, array $tags) {
-    foreach ($tags as $tag) {
-      $current = $this->client->get($this->getKey(['tag', $tag]));
-      if (!$current || $checksum < $current) {
-        return FALSE;
-      }
-    }
-    return TRUE;
+    return $this->calculateChecksum($tags) <= $checksum;
   }
 
   /**
@@ -97,20 +98,28 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
 
     foreach ($tags as $tag) {
 
-      $current = $this->client->get($this->getKey(['tag', $tag]));
+      if (isset($this->tagCache[$tag])) {
+        $current = $this->tagCache[$tag];
+      }
+      else {
+        $tagKey = $this->getKey(['tag', $tag]);
+        $current = $this->client->get($tagKey);
 
-      if (!$current) {
-        // Tag has never been created yet, so ensure it has an entry in Redis
-        // database. When dealing in a sharded environment, the tag checksum
-        // itself might have been dropped silently, case in which giving back
-        // a 0 value can cause invalided cache entries to be considered as
-        // valid back.
-        // Note that doing that, in case a tag key was dropped by the holding
-        // Redis server, all items based upon the droppped tag will then become
-        // invalid, but that's the definitive price of trying to being
-        // consistent in all cases.
-        $current = $this->getNextIncrement();
-        $this->client->set($this->getKey(['tag', $tag]), $current);
+        if (!$current) {
+          // Tag has never been created yet, so ensure it has an entry in Redis
+          // database. When dealing in a sharded environment, the tag checksum
+          // itself might have been dropped silently, case in which giving back
+          // a 0 value can cause invalided cache entries to be considered as
+          // valid back.
+          // Note that doing that, in case a tag key was dropped by the holding
+          // Redis server, all items based upon the droppped tag will then become
+          // invalid, but that's the definitive price of trying to being
+          // consistent in all cases.
+          $current = $this->getNextIncrement();
+          $this->client->set($tagKey, $current);
+        }
+
+        $this->tagCache[$tag] = $current;
       }
 
       if ($checksum < $current) {
@@ -125,8 +134,8 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    * {@inheritdoc}
    */
   public function reset() {
-    $this->tagCache = array();
-    $this->invalidatedTags = array();
+    $this->tagCache = [];
+    $this->invalidatedTags = [];
   }
 
 }

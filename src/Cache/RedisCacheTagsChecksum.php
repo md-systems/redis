@@ -82,7 +82,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
   public function isValid($checksum, array $tags) {
     foreach ($tags as $tag) {
       $current = $this->client->get($this->getKey(['tag', $tag]));
-      if ($checksum < $current) {
+      if (!$current || $checksum < $current) {
         return FALSE;
       }
     }

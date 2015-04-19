@@ -103,7 +103,10 @@ class ShardedPhpRedis extends CacheBase {
     }
 
     $item = (object)$item;
-    $item->tags = explode(',', $item->tags);
+    // @todo Sometimes tags are inserted as an " " string case in which we end
+    // up with explode'ing it and get as a result [""] which breaks items
+    // validity at tags check. Explore this and find why.
+    $item->tags = array_filter(explode(',', $item->tags));
     $item->valid = (bool)$item->valid;
     $item->expire = (int)$item->expire;
     $item->ttl = (int)$item->ttl;

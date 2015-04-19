@@ -1,0 +1,40 @@
+TODOLIST
+--------
+
+If you want a really fast Drupal 8:
+
+ * Drupal\Core\KeyValueStore\DatabaseStorage
+   Notes:
+     - Easy one.
+     - Must be able to separate it from the sharded pool since it needs to
+       be reliable and consistent over time. The client/server pool
+       implementation from 7.x-3.x must be port too.
+
+ * Drupal\Core\Routing
+   Notes:
+     - Quite easy one too
+     - I'm not sure if there is other components using it or not, case in
+       which this is not sure anymore this is easy.
+
+ * Drupal\Core\Config\DatabaseStorage
+   Note:
+     - Easy one.
+
+ * Drupal\Core\Path\AliasStorage
+   Note:
+     - Already done in 7.x-2.x version, and if the schema didn't change much
+       this a rather easy one too.
+     - If the same schema is used that the 7.x version, then there is no use
+       in sharding it, and should be stored along the router table replacement.
+
+ * Drupal\Core\Session\SessionHandler
+   Note:
+     - Easy one.
+
+The first two will get rid of almost 30 out of the 50 remaining SQL queries
+on a simple homepage with no content displayed. The third one will get rid of
+5 or so remaining.
+
+If all of those are took care of, it will remain less than 10 SQL queries on
+a standard profile home page. After that, real profiling needs to be done over
+a site with contents, blocks and views all around the place, on various pages.

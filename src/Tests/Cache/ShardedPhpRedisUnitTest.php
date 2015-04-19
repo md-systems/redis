@@ -49,7 +49,7 @@ class ShardedPhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
     $cache = new ShardedPhpRedis(
         $bin,
         \Drupal::service('redis.factory')->getClient(),
-        \Drupal::service('redis.phpredis.invalidator')
+        \Drupal::service('cache_tags.invalidator.checksum')
     );
     $cache->setMinTtl(10);
     return $cache;

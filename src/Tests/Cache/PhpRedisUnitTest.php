@@ -48,7 +48,7 @@ class PhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
     $cache = new PhpRedis(
         $bin,
         \Drupal::service('redis.factory')->getClient(),
-        \Drupal::service('redis.phpredis.invalidator')
+        \Drupal::service('cache_tags.invalidator.checksum')
     );
     $cache->setMinTtl(10);
     return $cache;

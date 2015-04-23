@@ -4,11 +4,13 @@ TODOLIST
 If you want a really fast Drupal 8:
 
  * Drupal\Core\KeyValueStore\DatabaseStorage
+   Drupal\Core\KeyValueStore\DatabaseStorageExpirable
    Notes:
-     - Easy one.
+     - Both are easy to implement.
      - Must be able to separate it from the sharded pool since it needs to
        be reliable and consistent over time. The client/server pool
        implementation from 7.x-3.x must be port too.
+     - The first bring the complexity of the data migration.
 
  * Drupal\Core\Routing
    Notes:

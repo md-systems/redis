@@ -172,7 +172,7 @@ trait RedisPrefixTrait {
       return time() . '.000';
     }
 
-    if (false !== ($pos = strpos($timestamp, '.'))) {
+    if (FALSE !== ($pos = strpos($timestamp, '.'))) {
       $inc = substr($timestamp, $pos + 1, 3);
 
       return ((int)$timestamp) . '.' . str_pad($inc + 1, 3, '0', STR_PAD_LEFT);

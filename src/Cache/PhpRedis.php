@@ -16,6 +16,11 @@ use Drupal\Core\Cache\CacheTagsChecksumInterface;
 class PhpRedis extends CacheBase {
 
   /**
+   * A bit more than 10 minutes.
+   */
+  const INVALID_TTL = 666;
+
+  /**
    * @var \Redis
    */
   protected $client;
@@ -28,13 +33,6 @@ class PhpRedis extends CacheBase {
   protected $checksumProvider;
 
   /**
-   * The last delete timestamp.
-   *
-   * @var float
-   */
-  protected $lastDeleteAll = NULL;
-
-  /**
    * Creates a PHpRedis cache backend.
    */
   function __construct($bin, \Redis $client, CacheTagsChecksumInterface $checksum_provider) {
@@ -44,48 +42,129 @@ class PhpRedis extends CacheBase {
   }
 
   /**
+   * Set the last flush timestamp
+   *
+   * @param boolean $overwrite
+   *   If set the method won't try to load the existing value before
+   *
+   * @return string
+   */
+  protected function setLastFlushTime($overwrite = false) {
+
+    $key = $this->getKey('_flush');
+    $time = time();
+
+    $flushTime = $this->client->get($key);
+
+    if ($flushTime && $time === (int)$flushTime) {
+      $flushTime = $this->getNextIncrement($flushTime);
+    } else {
+      $flushTime = $this->getNextIncrement($time);
+    }
+
+    $this->client->set($key, $flushTime);
+
+    return $flushTime;
+  }
+
+  /**
+   * Get the last flush timestamp
+   *
+   * @return string
+   */
+  protected function getLastFlushTime() {
+
+    $flushTime = $this->client->get($this->getKey('_flush'));
+
+    if (!$flushTime) {
+      // In case there is no last flush data consider that the cache backend
+      // is actually pending an inconsistent state, the 'flush' key might
+      // disappear anytime a server is replaced or manually flushed. Please
+      // note that the initial flush timestamp is set when an entry is set
+      // too.
+      $flushTime = $this->setLastFlushTime();
+    }
+
+    return $flushTime;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function get($cid, $allow_invalid = FALSE) {
+
+    $entryKey = $this->getKey($cid);
+    $item = $this->client->hGetAll($entryKey);
+    $time = time();
+
+    if (!$item) {
+      return FALSE;
+    }
+
+    $item = (object)$item;
+    // @todo Sometimes tags are inserted as an " " string case in which we end
+    // up with explode'ing it and get as a result [""] which breaks items
+    // validity at tags check. Explore this and find why.
+    $item->tags = array_filter(explode(',', $item->tags));
+    $item->valid = (bool)$item->valid;
+    $item->expire = (int)$item->expire;
+    $item->ttl = (int)$item->ttl;
+
+    if (!$item->valid && $item->ttl === self::INVALID_TTL ) {
+      // @todo This is ugly but we are int the case where an already expired
+      // entry was set previously, this means that we are probably in the unit
+      // tests and we should not delete this entry to make core tests happy.
+      if (!$allow_invalid) {
+        if ($item->created < $time - $item->ttl) {
+          // Force delete 10 mintes after the invalidation to keep some
+          // cleanup level for this ugly hack.
+          $this->client->del($entryKey);
+        }
+        return FALSE;
+      }
+    } else if ($item->valid && !$allow_invalid) {
+
+      if (Cache::PERMANENT !== $item->expire && $item->expire < $time) {
+        $this->client->del($entryKey);
+        return FALSE;
+      }
+
+      $lastFlush = $this->getLastFlushTime();
+      if ($item->created < $lastFlush) {
+        $this->client->del($entryKey);
+        return FALSE;
+      }
+
+      if (!$this->checksumProvider->isValid($item->checksum, $item->tags)) {
+        $this->client->del($entryKey);
+        return FALSE;
+      }
+    }
+
+    $item->data = unserialize($item->data);
+    $item->created = (int)$item->created;
+
+    return $item;
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function getMultiple(&$cids, $allow_invalid = FALSE) {
-    // Avoid an error when there are no cache ids.
-    if (empty($cids)) {
-      return [];
-    }
+    $ret = [];
 
-    $return = array();
-
-    // Build the list of keys to fetch.
-    $keys = array_map(array($this, 'getKey'), $cids);
-
-    // Optimize for the common case when only a single cache entry needs to
-    // be fetched, no pipeline is needed then.
-    if (count($keys) > 1) {
-      $pipe = $this->client->multi(\Redis::PIPELINE);
-      foreach ($keys as $key) {
-        $pipe->hgetall($key);
-      }
-      $result = $pipe->exec();
-    }
-    else {
-      $result = [$this->client->hGetAll(reset($keys))];
-    }
-
-    // Loop over the cid values to ensure numeric indexes.
-    foreach (array_values($cids) as $index => $key) {
-      // Check if a valid result was returned from Redis.
-      if (isset($result[$index]) && is_array($result[$index])) {
-        // Check expiration and invalidation and convert into an object.
-        $item = $this->expandEntry($result[$index], $allow_invalid);
-        if ($item) {
-          $return[$item->cid] = $item;
-        }
+    // @todo Unperformant, but in a sharded environement we
+    // cannot proceed another way, still there are some paths
+    // to explore
+    foreach ($cids as $index => $cid) {
+      $item = $this->get($cid, $allow_invalid);
+      if ($item) {
+        $ret[$cid] = $item;
+        unset($cids[$index]);
       }
     }
 
-    // Remove fetched cids from the list.
-    $cids = array_diff($cids, array_keys($return));
-
-    return $return;
+    return $ret;
   }
 
   /**
@@ -93,57 +172,129 @@ class PhpRedis extends CacheBase {
    */
   public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
 
-    $ttl = $this->getExpiration($expire);
+    Cache::validateTags($tags);
 
-    $key = $this->getKey($cid);
+    $time = time();
+    $created = null;
+    $entryKey = $this->getKey($cid);
+    $lastFlush = $this->getLastFlushTime();
 
-    // If the item is already expired, delete it.
-    if ($ttl <= 0) {
-      $this->delete($key);
+    if ($time === (int)$lastFlush) {
+      // Latest flush happened the exact same second.
+      $created = $lastFlush;
+    } else {
+      $created = $this->getNextIncrement($time);
     }
 
-    // Build the cache item and save it as a hash array.
-    $entry = $this->createEntryHash($cid, $data, $expire, $tags);
-    $pipe = $this->client->multi(\Redis::PIPELINE);
-    $pipe->hMset($key, $entry);
-    $pipe->expire($key, $ttl);
-    $pipe->exec();
+    $valid = true;
+    $maxTtl = $this->getPermTtl();
+
+    if (Cache::PERMANENT !== $expire) {
+
+      if ($expire <= $time) {
+        // And existing entry if any is stalled
+        // $this->client->del($entryKey);
+        // return;
+        // @todo This might happen during tests to check that invalid entries
+        // can be fetched, I do not like this. This invalid features mostly
+        // serves some edge caching cases, let's set a very small cache life
+        // time. 10 minutes is enought. See ::invalidate() method comment.
+        $valid = false;
+        $ttl = self::INVALID_TTL;
+      } else {
+        $ttl = $expire - $time;
+      }
+
+      if ($maxTtl < $ttl) {
+        $ttl = $maxTtl;
+      }
+    // This feature might be deactivated by the site admin.
+    } else if ($maxTtl !== self::LIFETIME_INFINITE) {
+      $ttl = $maxTtl;
+    } else {
+      $ttl = $expire;
+    }
+
+    //getExpiration
+    // 0 for tag means it never has been deleted
+    $checksum = $this->checksumProvider->getCurrentChecksum($tags);
+
+    $this->client->hMset($entryKey, [
+      'cid'      => $cid,
+      'created'  => $created,
+      'checksum' => $checksum,
+      'expire'   => $expire,
+      'ttl'      => $ttl,
+      'data'     => serialize($data),
+      'tags'     => implode(',', $tags),
+      'valid'    => (int)$valid,
+    ]);
+
+    if ($expire !== Cache::PERMANENT) {
+      $this->client->expire($entryKey, $ttl);
+    }
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function setMultiple(array $items) {
+    foreach ($items as $cid => $item) {
+      $item += [
+        'data'   => null,
+        'expire' => Cache::PERMANENT,
+        'tags'   => [],
+      ];
+      $this->set($cid, $item['data'], $item['expire'], $item['tags']);
+    }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function delete($cid) {
+    $this->client->del($this->getKey($cid));
+  }
 
   /**
    * {@inheritdoc}
    */
   public function deleteMultiple(array $cids) {
-    $keys = array_map(array($this, 'getKey'), $cids);
-    $this->client->del($keys);
+    foreach ($cids as $cid) {
+      $this->client->del($this->getKey($cid));
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public function deleteAll() {
-    // The last delete timestamp is in milliseconds, ensure that no cache
-    // was written in the same millisecond.
-    // @todo This is needed to make the tests pass, is this safe enough for real
-    //   usage?
-    // @todo (pounard) Using the getNextIncrement() will make it safe.
-    usleep(1000);
-    $this->lastDeleteAll = round(microtime(TRUE), 3);
-    $this->client->set($this->getKey(static::LAST_DELETE_ALL_KEY), $this->lastDeleteAll);
+    $this->setLastFlushTime();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function invalidate($cid) {
+    $entryKey = $this->getKey($cid);
+    if ($this->client->hGet($entryKey, 'valid')) {
+      // @todo Note that the original algorithm was to delete the entry at
+      // this point instead of just invalidate it, but the bigger core unit
+      // test method actually goes down that path, so as a temporary solution
+      // we are just invalidating it this way.
+      $this->client->hMset($entryKey, [
+        'valid' => 0,
+        'ttl' => self::INVALID_TTL,
+      ]);
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public function invalidateMultiple(array $cids) {
-    // Loop over all cache items, they are stored as a hash, so we can access
-    // the valid flag directly, only write if it exists and is not 0.
     foreach ($cids as $cid) {
-      $key = $this->getKey($cid);
-      if ($this->client->hGet($key, 'valid')) {
-        $this->client->hSet($key, 'valid', 0);
-      }
+      $this->invalidate($cid);
     }
   }
 
@@ -151,119 +302,24 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function invalidateAll() {
-    // To invalidate the whole bin, we invalidate a special tag for this bin.
-    $this->checksumProvider->invalidateTags([$this->getTagForBin()]);
+    $this->setLastFlushTime();
   }
 
   /**
    * {@inheritdoc}
    */
   public function garbageCollection() {
-    // @todo Do we need to do anything here?
+    // No need for garbage collection, Redis will do it for us based upon
+    // the entries TTL. Also, knowing that in a sharded environment we cannot
+    // predict where entries are going to be stored, especially when doing
+    // proxy assisted sharding, we can't really do anything in here.
   }
 
   /**
-   *  Returns the last delete all timestamp.
-   *
-   * @return float
-   *   The last delete timestamp as a timestamp with a millisecond precision.
+   * {@inheritdoc}
    */
-  protected function getLastDeleteAll() {
-    // Cache the last delete all timestamp.
-    if ($this->lastDeleteAll === NULL) {
-      $this->lastDeleteAll = (float) $this->client->get($this->getKey(static::LAST_DELETE_ALL_KEY));
-    }
-    return $this->lastDeleteAll;
-  }
-
-  /**
-   * Create cache entry.
-   *
-   * @param string $cid
-   * @param mixed $data
-   * @param int $expire
-   * @param string[] $tags
-   *
-   * @return array
-   */
-  protected function createEntryHash($cid, $data, $expire = Cache::PERMANENT, array $tags) {
-    // Always add a cache tag for the current bin, so that we can use that for
-    // invalidateAll().
-    $tags[] = $this->getTagForBin();
-    Cache::validateTags($tags);
-    $hash = array(
-      'cid' => $cid,
-      'created' => round(microtime(TRUE), 3),
-      'expire' => $expire,
-      'tags' => implode(' ', $tags),
-      'valid' => 1,
-      'checksum' => $this->checksumProvider->getCurrentChecksum($tags),
-    );
-
-    // Let Redis handle the data types itself.
-    if (!is_string($data)) {
-      $hash['data'] = serialize($data);
-      $hash['serialized'] = 1;
-    }
-    else {
-      $hash['data'] = $data;
-      $hash['serialized'] = 0;
-    }
-
-    return $hash;
-  }
-
-  /**
-   * Prepares a cached item.
-   *
-   * Checks that items are either permanent or did not expire, and unserializes
-   * data as appropriate.
-   *
-   * @param array $values
-   *   The hash returned from redis or false.
-   * @param bool $allow_invalid
-   *   If FALSE, the method returns FALSE if the cache item is not valid.
-   *
-   * @return mixed|false
-   *   The item with data unserialized as appropriate and a property indicating
-   *   whether the item is valid, or FALSE if there is no valid item to load.
-   */
-  protected function expandEntry(array $values, $allow_invalid) {
-    // Check for entry being valid.
-    if (empty($values['cid'])) {
-      return FALSE;
-    }
-
-    $cache = (object) $values;
-
-    $cache->tags = explode(' ', $cache->tags);
-
-    // Check expire time, allow to have a cache invalidated explicitly, don't
-    // check if already invalid.
-    if ($cache->valid) {
-      $cache->valid = $cache->expire == Cache::PERMANENT || $cache->expire >= time();
-
-      // Check if invalidateTags() has been called with any of the items's tags.
-      if ($cache->valid && !$this->checksumProvider->isValid($cache->checksum, $cache->tags)) {
-        $cache->valid = FALSE;
-      }
-    }
-
-    // Ensure the entry does not predate the last delete all time.
-    $last_delete_timestamp = $this->getLastDeleteAll();
-    if ($last_delete_timestamp && ((float)$values['created']) < $last_delete_timestamp) {
-      return FALSE;
-    }
-
-    if (!$allow_invalid && !$cache->valid) {
-      return FALSE;
-    }
-
-    if ($cache->serialized) {
-      $cache->data = unserialize($cache->data);
-    }
-
-    return $cache;
+  public function removeBin() {
+    $this->deleteAll();
   }
 
 }

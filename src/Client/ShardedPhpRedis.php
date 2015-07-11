@@ -18,7 +18,7 @@ class ShardedPhpRedis extends PhpRedis {
    * {@inheritdoc}
    */
   public function getName() {
-    return 'ShardedPhpRedis';
+    return 'PhpRedis';
   }
 
 }

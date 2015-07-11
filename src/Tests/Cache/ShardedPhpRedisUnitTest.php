@@ -10,7 +10,7 @@ namespace Drupal\redis\Tests\Cache;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Site\Settings;
-use Drupal\redis\Cache\ShardedPhpRedis;
+use Drupal\redis\Cache\PhpRedis;
 use Drupal\system\Tests\Cache\GenericCacheBackendUnitTestBase;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -45,7 +45,7 @@ class ShardedPhpRedisUnitTest extends GenericCacheBackendUnitTestBase {
    *   A new PhpRedis cache backend.
    */
   protected function createCacheBackend($bin) {
-    $cache = new ShardedPhpRedis(
+    $cache = new PhpRedis(
         $bin,
         \Drupal::service('redis.factory')->getClient(),
         \Drupal::service('cache_tags.invalidator.checksum')

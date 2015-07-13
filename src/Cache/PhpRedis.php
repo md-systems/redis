@@ -52,7 +52,7 @@ class PhpRedis extends CacheBase {
   protected function setLastFlushTime($overwrite = false) {
 
     $key = $this->getKey('_flush');
-    $time = time();
+    $time = REQUEST_TIME;
 
     $flushTime = $this->client->get($key);
 
@@ -95,7 +95,7 @@ class PhpRedis extends CacheBase {
 
     $entryKey = $this->getKey($cid);
     $item = $this->client->hGetAll($entryKey);
-    $time = time();
+    $time = REQUEST_TIME;
 
     if (!$item) {
       return FALSE;
@@ -174,7 +174,7 @@ class PhpRedis extends CacheBase {
 
     Cache::validateTags($tags);
 
-    $time = time();
+    $time = REQUEST_TIME;
     $created = null;
     $entryKey = $this->getKey($cid);
     $lastFlush = $this->getLastFlushTime();
@@ -198,7 +198,7 @@ class PhpRedis extends CacheBase {
         // @todo This might happen during tests to check that invalid entries
         // can be fetched, I do not like this. This invalid features mostly
         // serves some edge caching cases, let's set a very small cache life
-        // time. 10 minutes is enought. See ::invalidate() method comment.
+        // time. 10 minutes is enough. See ::invalidate() method comment.
         $valid = false;
         $ttl = self::INVALID_TTL;
       } else {

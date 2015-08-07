@@ -14,7 +14,7 @@ mkdir -p "$DRUPAL_TI_MODULES_PATH"
 cd "$DRUPAL_TI_MODULES_PATH"
 
 #Enable php-redis
-sudo echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
 
 # Download predis
 git clone --depth 1 https://github.com/nrk/predis

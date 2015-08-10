@@ -24,7 +24,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    *
    * @var array
    */
-  protected $tagCache = array();
+  protected $tagCache = [];
 
   /**
    * A list of tags that have already been invalidated in this request.
@@ -33,7 +33,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    *
    * @var array
    */
-  protected $invalidatedTags = array();
+  protected $invalidatedTags = [];
 
   /**
    * @var \Redis
@@ -51,22 +51,21 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    * {@inheritdoc}
    */
   public function invalidateTags(array $tags) {
-    $keys_to_increment = [];
     foreach ($tags as $tag) {
-      // Only invalidate tags once per request unless they are written again.
       if (isset($this->invalidatedTags[$tag])) {
+        // Only invalidate tags once per request unless they are written again.
         continue;
       }
+
+      $tagKey = $this->getKey(['tag', $tag]);
+      $current = $this->client->get($tagKey);
+
+      $current = $this->getNextIncrement($current);
+      $this->client->set($tagKey, $current);
+
+      // Rightly populate the tag cache with the new values.
       $this->invalidatedTags[$tag] = TRUE;
-      unset($this->tagCache[$tag]);
-      $keys_to_increment[] = $this->getTagKey($tag);
-    }
-    if ($keys_to_increment) {
-      $multi = $this->client->multi(\Redis::PIPELINE);
-      foreach ($keys_to_increment as $key) {
-        $multi->incr($key);
-      }
-      $multi->exec();
+      $this->tagCache[$tag] = $current;
     }
   }
 
@@ -88,7 +87,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    * {@inheritdoc}
    */
   public function isValid($checksum, array $tags) {
-    return $checksum == $this->calculateChecksum($tags);
+    return $this->calculateChecksum($tags) <= $checksum;
   }
 
   /**
@@ -97,16 +96,35 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
   public function calculateChecksum(array $tags) {
     $checksum = 0;
 
-    $fetch = array_values(array_diff($tags, array_keys($this->tagCache)));
-    if ($fetch) {
-      $keys = array_map(array($this, 'getTagKey'), $fetch);
-      foreach ($this->client->mget($keys) as $index => $invalidations) {
-        $this->tagCache[$fetch[$index]] = $invalidations ?: 0;
-      }
-    }
-
     foreach ($tags as $tag) {
-      $checksum += $this->tagCache[$tag];
+
+      if (isset($this->tagCache[$tag])) {
+        $current = $this->tagCache[$tag];
+      }
+      else {
+        $tagKey = $this->getKey(['tag', $tag]);
+        $current = $this->client->get($tagKey);
+
+        if (!$current) {
+          // Tag has never been created yet, so ensure it has an entry in Redis
+          // database. When dealing in a sharded environment, the tag checksum
+          // itself might have been dropped silently, case in which giving back
+          // a 0 value can cause invalided cache entries to be considered as
+          // valid back.
+          // Note that doing that, in case a tag key was dropped by the holding
+          // Redis server, all items based upon the droppped tag will then become
+          // invalid, but that's the definitive price of trying to being
+          // consistent in all cases.
+          $current = $this->getNextIncrement();
+          $this->client->set($tagKey, $current);
+        }
+
+        $this->tagCache[$tag] = $current;
+      }
+
+      if ($checksum < $current) {
+        $checksum = $current;
+      }
     }
 
     return $checksum;
@@ -116,21 +134,8 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    * {@inheritdoc}
    */
   public function reset() {
-    $this->tagCache = array();
-    $this->invalidatedTags = array();
-  }
-
-  /**
-   * Return the key for the given cache tag.
-   *
-   * @param string $tag
-   *   The cache tag.
-   *
-   * @return string
-   *   The prefixed cache tag.
-   */
-  protected function getTagKey($tag) {
-    return $this->getPrefix() . ':cachetags:' . $tag;
+    $this->tagCache = [];
+    $this->invalidatedTags = [];
   }
 
 }

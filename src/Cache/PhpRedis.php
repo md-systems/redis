@@ -104,7 +104,7 @@ class PhpRedis extends CacheBase {
 
     // Build the cache item and save it as a hash array.
     $entry = $this->createEntryHash($cid, $data, $expire, $tags);
-    $pipe = $this->client->multi(\REdis::PIPELINE);
+    $pipe = $this->client->multi(\Redis::PIPELINE);
     $pipe->hMset($key, $entry);
     $pipe->expire($key, $ttl);
     $pipe->exec();
@@ -127,6 +127,7 @@ class PhpRedis extends CacheBase {
     // was written in the same millisecond.
     // @todo This is needed to make the tests pass, is this safe enough for real
     //   usage?
+    // @todo (pounard) Using the getNextIncrement() will make it safe.
     usleep(1000);
     $this->lastDeleteAll = round(microtime(TRUE), 3);
     $this->client->set($this->getKey(static::LAST_DELETE_ALL_KEY), $this->lastDeleteAll);
@@ -240,7 +241,7 @@ class PhpRedis extends CacheBase {
     // Check expire time, allow to have a cache invalidated explicitly, don't
     // check if already invalid.
     if ($cache->valid) {
-      $cache->valid = $cache->expire == Cache::PERMANENT || $cache->expire >= REQUEST_TIME;
+      $cache->valid = $cache->expire == Cache::PERMANENT || $cache->expire >= time();
 
       // Check if invalidateTags() has been called with any of the items's tags.
       if ($cache->valid && !$this->checksumProvider->isValid($cache->checksum, $cache->tags)) {

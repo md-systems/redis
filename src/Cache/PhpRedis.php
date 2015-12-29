@@ -172,7 +172,7 @@ class PhpRedis extends CacheBase {
    */
   public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
 
-    Cache::validateTags($tags);
+    assert('\Drupal\Component\Assertion\Inspector::assertAllStrings($tags)', 'Cache Tags must be strings.');
 
     $time = REQUEST_TIME;
     $created = null;

@@ -21,7 +21,9 @@ use Drupal\redis\RedisPrefixTrait;
  */
 abstract class CacheBase implements CacheBackendInterface {
 
-  use RedisPrefixTrait;
+  use RedisPrefixTrait {
+    getKey as getParentKey;
+  }
 
   /**
    * Temporary cache items lifetime is infinite.
@@ -33,17 +35,6 @@ abstract class CacheBase implements CacheBackendInterface {
    * Approximatively 1 year.
    */
   const LIFETIME_PERM_DEFAULT = 31536000;
-
-  /**
-   * Computed keys are let's say arround 60 characters length due to
-   * key prefixing, which makes 1,000 keys DEL command to be something
-   * arround 50,000 bytes length: this is huge and may not pass into
-   * Redis, let's split this off.
-   * Some recommend to never get higher than 1,500 bytes within the same
-   * command which makes us forced to split this at a very low threshold:
-   * 20 seems a safe value here (1,280 average length).
-   */
-  const KEY_THRESHOLD = 20;
 
   /**
    * Latest delete all flush KEY name.
@@ -133,18 +124,6 @@ abstract class CacheBase implements CacheBackendInterface {
   }
 
   /**
-   * Return the key for the given cache key.
-   */
-  public function getKey($cid = NULL) {
-    if (NULL === $cid) {
-      return $this->getPrefix() . ':' . $this->bin;
-    }
-    else {
-      return $this->getPrefix() . ':' . $this->bin . ':' . $cid;
-    }
-  }
-
-  /**
    * Calculate the correct expiration time.
    *
    * @param int $expire
@@ -158,7 +137,7 @@ abstract class CacheBase implements CacheBackendInterface {
     if ($expire == Cache::PERMANENT || $expire > $this->permTtl) {
       return $this->permTtl;
     }
-    return $expire - REQUEST_TIME;
+    return $expire - time();
   }
 
   /**
@@ -203,6 +182,17 @@ abstract class CacheBase implements CacheBackendInterface {
         }
       }
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getKey($parts) {
+    if (is_string($parts)) {
+      $parts = [$parts];
+    }
+    array_unshift($parts, $this->bin);
+    return $this->getParentKey($parts);
   }
 
 }

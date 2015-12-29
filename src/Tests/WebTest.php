@@ -35,6 +35,7 @@ class WebTest extends WebTestBase {
     parent::setUp();
 
     $this->drupalPlaceBlock('system_breadcrumb_block');
+    $this->drupalPlaceBlock('local_tasks_block');
 
     $cache_configuration = [
       'default' => 'cache.backend.redis',
@@ -96,9 +97,9 @@ class WebTest extends WebTestBase {
     $edit["modules[Core][views][enable]"] = TRUE;
     $edit["modules[Core][field_ui][enable]"] = TRUE;
     $edit["modules[Field types][text][enable]"] = TRUE;
-    $this->drupalPostForm('admin/modules', $edit, t('Save configuration'));
+    $this->drupalPostForm('admin/modules', $edit, t('Install'));
     $this->drupalPostForm(NULL, [], t('Continue'));
-    $this->assertText(t('The configuration options have been saved.'));
+    $this->assertText('6 modules have been enabled: Field UI, Node, Views, Text, Field, Filter.');
     $this->assertFieldChecked('edit-modules-core-field-ui-enable');
 
     // Create a node type with a field.

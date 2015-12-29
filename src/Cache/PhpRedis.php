@@ -189,7 +189,7 @@ class PhpRedis extends CacheBase {
     // Always add a cache tag for the current bin, so that we can use that for
     // invalidateAll().
     $tags[] = $this->getTagForBin();
-    Cache::validateTags($tags);
+    assert('\Drupal\Component\Assertion\Inspector::assertAllStrings($tags)', 'Cache Tags must be strings.');
     $hash = array(
       'cid' => $cid,
       'created' => round(microtime(TRUE), 3),

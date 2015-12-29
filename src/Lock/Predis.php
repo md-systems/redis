@@ -7,12 +7,13 @@
 
 namespace Drupal\redis\Lock;
 
+use Drupal\Core\Lock\LockBackendAbstract;
 use Drupal\redis\LockBase;
 
 /**
  * Predis lock backend implementation.
  */
-class Predis extends LockBase {
+class Predis extends LockBackendAbstract {
 
   public function lockAcquire($name, $timeout = 30.0) {
     $client = ClientFactory::getClient();

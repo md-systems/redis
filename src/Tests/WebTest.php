@@ -72,6 +72,10 @@ class WebTest extends WebTestBase {
       'arguments' => ['@redis.factory'],
       'tags' => [['name' => 'cache_tags_invalidator']]
     ];
+    $services['services']['lock'] = [
+      'class' => 'Drupal\Core\Lock\LockBackendInterface',
+      'factory' => ['@redis.lock.factory', 'get'],
+    ];
     file_put_contents($directory . '/services.yml', $yaml->dump($services));
 
     // Reset the cache factory.

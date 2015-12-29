@@ -7,16 +7,50 @@
 
 namespace Drupal\redis\Lock;
 
-use Drupal\redis\LockBase;
+use Drupal\Core\Lock\LockBackendAbstract;
+use Drupal\redis\ClientFactory;
+use Drupal\redis\RedisPrefixTrait;
 
 /**
  * Predis lock backend implementation.
  */
-class PhpRedis extends LockBase {
+class PhpRedis extends LockBackendAbstract {
 
-  public function lockAcquire($name, $timeout = 30.0) {
-    $client = ClientFactory::getClient();
-    $key    = $this->getKey($name);
+  use RedisPrefixTrait;
+
+  /**
+   * @var \Redis
+   */
+  protected $client;
+
+  /**
+   * Creates a PHpRedis cache backend.
+   */
+  function __construct(ClientFactory $factory) {
+    $this->client = $factory->getClient();
+    // __destruct() is causing problems with garbage collections, register a
+    // shutdown function instead.
+    drupal_register_shutdown_function(array($this, 'releaseAll'));
+  }
+
+  /**
+   * Generate a redis key name for the current lock name.
+   *
+   * @param string $name
+   *   Lock name.
+   *
+   * @return string
+   *   The redis key for the given lock.
+   */
+  protected function getKey($name) {
+    return $this->getPrefix() . ':lock:' . $name;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function acquire($name, $timeout = 30.0) {
+    $key    = $this->getPrefix() . ':lock:' . $name;
     $id     = $this->getLockId();
 
     // Insure that the timeout is at least 1 second, we cannot do otherwise with
@@ -26,51 +60,51 @@ class PhpRedis extends LockBase {
 
     // If we already have the lock, check for his owner and attempt a new EXPIRE
     // command on it.
-    if (isset($this->_locks[$name])) {
+    if (isset($this->locks[$name])) {
 
       // Create a new transaction, for atomicity.
-      $client->watch($key);
+      $this->client->watch($key);
 
       // Global tells us we are the owner, but in real life it could have expired
       // and another process could have taken it, check that.
-      if ($client->get($key) != $id) {
+      if ($this->client->get($key) != $id) {
         // Explicit UNWATCH we are not going to run the MULTI/EXEC block.
-        $client->unwatch();
-        unset($this->_locks[$name]);
+        $this->client->unwatch();
+        unset($this->locks[$name]);
         return FALSE;
       }
 
       // See https://github.com/nicolasff/phpredis#watch-unwatch
       // MULTI and other commands can fail, so we can't chain calls.
-      if (FALSE !== ($result = $client->multi())) {
-        $client->setex($key, $timeout, $id);
-        $result = $client->exec();
+      if (FALSE !== ($result = $this->client->multi())) {
+        $this->client->setex($key, $timeout, $id);
+        $result = $this->client->exec();
       }
 
       // Did it broke?
       if (FALSE === $result) {
-        unset($this->_locks[$name]);
+        unset($this->locks[$name]);
         // Explicit transaction release which also frees the WATCH'ed key.
-        $client->discard();
+        $this->client->discard();
         return FALSE;
       }
 
-      return ($this->_locks[$name] = TRUE);
+      return ($this->locks[$name] = TRUE);
     }
     else {
-      $client->watch($key);
-      $owner = $client->get($key);
+      $this->client->watch($key);
+      $owner = $this->client->get($key);
 
       // If the $key is set they lock is not available
       if (!empty($owner) && $id != $owner) {
-        $client->unwatch();
+        $this->client->unwatch();
         return FALSE;
       }
 
       // See https://github.com/nicolasff/phpredis#watch-unwatch
       // MULTI and other commands can fail, so we can't chain calls.
-      if (FALSE !== ($result = $client->multi())) {
-        $client->setex($key, $timeout, $id);
+      if (FALSE !== ($result = $this->client->multi())) {
+        $this->client->setex($key, $timeout, $id);
         $result->exec();
       }
 
@@ -79,65 +113,69 @@ class PhpRedis extends LockBase {
       // the other client took the lock instead of us.
       if (FALSE === $result) {
         // Explicit transaction release which also frees the WATCH'ed key.
-        $client->discard();
+        $this->client->discard();
         return FALSE;
       }
 
       // Register the lock.
-      return ($this->_locks[$name] = TRUE);
+      return ($this->locks[$name] = TRUE);
     }
-
-    return FALSE;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function lockMayBeAvailable($name) {
-    $client = ClientFactory::getClient();
     $key    = $this->getKey($name);
     $id     = $this->getLockId();
 
-    $value = $client->get($key);
+    $value = $this->client->get($key);
 
     return FALSE === $value || $id == $value;
   }
 
-  public function lockRelease($name) {
-    $client = ClientFactory::getClient();
+  /**
+   * {@inheritdoc}
+   */
+  public function release($name) {
     $key    = $this->getKey($name);
     $id     = $this->getLockId();
 
-    unset($this->_locks[$name]);
+    unset($this->locks[$name]);
 
     // Ensure the lock deletion is an atomic transaction. If another thread
     // manages to removes all lock, we can not alter it anymore else we will
     // release the lock for the other thread and cause race conditions.
-    $client->watch($key);
+    $this->client->watch($key);
 
-    if ($client->get($key) == $id) {
-      $client->multi();
-      $client->delete($key);
-      $client->exec();
+    if ($this->client->get($key) == $id) {
+      $this->client->multi();
+      $this->client->delete($key);
+      $this->client->exec();
     }
     else {
-      $client->unwatch();
+      $this->client->unwatch();
     }
   }
 
-  public function lockReleaseAll($lock_id = NULL) {
-    if (!isset($lock_id) && empty($this->_locks)) {
+  /**
+   * {@inheritdoc}
+   */
+  public function releaseAll($lock_id = NULL) {
+    if (!isset($lock_id) && empty($this->locks)) {
       return;
     }
 
-    $client = ClientFactory::getClient();
     $id     = isset($lock_id) ? $lock_id : $this->getLockId();
 
     // We can afford to deal with a slow algorithm here, this should not happen
     // on normal run because we should have removed manually all our locks.
-    foreach ($this->_locks as $name => $foo) {
+    foreach ($this->locks as $name => $foo) {
       $key   = $this->getKey($name);
-      $owner = $client->get($key);
+      $owner = $this->client->get($key);
 
       if (empty($owner) || $owner == $id) {
-        $client->delete($key);
+        $this->client->delete($key);
       }
     }
   }

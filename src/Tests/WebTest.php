@@ -7,7 +7,9 @@
 
 namespace Drupal\redis\Tests;
 
+use Drupal\Component\Utility\OpCodeCache;
 use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Site\Settings;
 use Drupal\field_ui\Tests\FieldUiTestTrait;
 use Drupal\simpletest\WebTestBase;
 use Symfony\Component\Yaml\Yaml;
@@ -59,34 +61,29 @@ class WebTest extends WebTestBase {
       ],
       'required' => TRUE,
     );
+
     $this->writeSettings($settings);
 
-    // Update the services.yml to use redis.
-    // Add a listener to validate configuration schema on save.
-    $yaml = new Yaml();
-    $directory = DRUPAL_ROOT . '/' . $this->siteDirectory;
-    $content = file_get_contents($directory . '/services.yml');
-    $services = $yaml->parse($content);
-    $services['services']['cache_tags.invalidator.checksum'] = [
-      'class' => 'Drupal\redis\Cache\RedisCacheTagsChecksum',
-      'arguments' => ['@redis.factory'],
-      'tags' => [['name' => 'cache_tags_invalidator']]
-    ];
-    $services['services']['lock'] = [
-      'class' => 'Drupal\Core\Lock\LockBackendInterface',
-      'factory' => ['@redis.lock.factory', 'get'],
-    ];
-    file_put_contents($directory . '/services.yml', $yaml->dump($services));
+    // Write the containers_yaml update by hand, since writeSettings() doesn't
+    // support this syntax.
+    $contents = file_get_contents($this->siteDirectory . '/settings.php');
+    $contents .= "\n\n" . '$settings[\'container_yamls\'][] = \'modules/redis/example.services.yml\';';
+    file_put_contents($this->siteDirectory . '/settings.php', $contents);
+    $settings = Settings::getAll();
+    $settings['container_yamls'][] = 'modules/redis/example.services.yml';
+    new Settings($settings);
+    OpCodeCache::invalidate(DRUPAL_ROOT . '/' . $this->siteDirectory . '/settings.php');
 
     // Reset the cache factory.
     $this->container->set('cache.factory', NULL);
     $this->rebuildContainer();
 
-    // Make sure that the cache tables aren't used.
+    // Make sure that the cache and lock tables aren't used.
     db_drop_table('cache_default');
     db_drop_table('cache_render');
     db_drop_table('cache_config');
     db_drop_table('cachetags');
+    db_drop_table('semaphore');
   }
 
   /**
@@ -150,6 +147,7 @@ class WebTest extends WebTestBase {
     $this->assertFalse(db_table_exists('cache_render'));
     $this->assertFalse(db_table_exists('cache_config'));
     $this->assertFalse(db_table_exists('cachetags'));
+    $this->assertFalse(db_table_exists('semaphore'));
   }
 
 }

@@ -43,6 +43,11 @@ class ClientFactory {
   const REDIS_IMPL_LOCK = '\\Drupal\\redis\\Lock\\';
 
   /**
+   * Persistent Lock implementation namespace.
+   */
+  const REDIS_IMPL_PERSISTENT_LOCK = '\\Drupal\\redis\\PersistentLock\\';
+
+  /**
    * Session implementation namespace.
    */
   const REDIS_IMPL_SESSION = '\\Drupal\\redis\\Session\\';

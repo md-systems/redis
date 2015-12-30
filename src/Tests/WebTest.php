@@ -66,13 +66,15 @@ class WebTest extends WebTestBase {
 
     // Write the containers_yaml update by hand, since writeSettings() doesn't
     // support this syntax.
-    $contents = file_get_contents($this->siteDirectory . '/settings.php');
+    $filename = $this->siteDirectory . '/settings.php';
+    chmod($filename, 0666);
+    $contents = file_get_contents($filename);
     $contents .= "\n\n" . '$settings[\'container_yamls\'][] = \'modules/redis/example.services.yml\';';
-    file_put_contents($this->siteDirectory . '/settings.php', $contents);
+    file_put_contents($filename, $contents);
     $settings = Settings::getAll();
     $settings['container_yamls'][] = 'modules/redis/example.services.yml';
     new Settings($settings);
-    OpCodeCache::invalidate(DRUPAL_ROOT . '/' . $this->siteDirectory . '/settings.php');
+    OpCodeCache::invalidate(DRUPAL_ROOT . '/' . $filename);
 
     // Reset the cache factory.
     $this->container->set('cache.factory', NULL);

@@ -26,7 +26,7 @@ class PhpRedis extends LockBackendAbstract {
   /**
    * Creates a PHpRedis cache backend.
    */
-  function __construct(ClientFactory $factory) {
+  public function __construct(ClientFactory $factory) {
     $this->client = $factory->getClient();
     // __destruct() is causing problems with garbage collections, register a
     // shutdown function instead.
@@ -50,13 +50,11 @@ class PhpRedis extends LockBackendAbstract {
    * {@inheritdoc}
    */
   public function acquire($name, $timeout = 30.0) {
-    $key    = $this->getPrefix() . ':lock:' . $name;
+    $key    = $this->getKey($name);
     $id     = $this->getLockId();
 
-    // Insure that the timeout is at least 1 second, we cannot do otherwise with
-    // Redis, this is a minor change to the function signature, but in real life
-    // nobody will notice with so short duration.
-    $timeout = ceil(max($timeout, 1));
+    // Insure that the timeout is at least 1 ms.
+    $timeout = max($timeout, 0.001);
 
     // If we already have the lock, check for his owner and attempt a new EXPIRE
     // command on it.
@@ -77,7 +75,7 @@ class PhpRedis extends LockBackendAbstract {
       // See https://github.com/nicolasff/phpredis#watch-unwatch
       // MULTI and other commands can fail, so we can't chain calls.
       if (FALSE !== ($result = $this->client->multi())) {
-        $this->client->setex($key, $timeout, $id);
+        $this->client->psetex($key, (int) ($timeout * 1000), $id);
         $result = $this->client->exec();
       }
 
@@ -92,28 +90,12 @@ class PhpRedis extends LockBackendAbstract {
       return ($this->locks[$name] = TRUE);
     }
     else {
-      $this->client->watch($key);
-      $owner = $this->client->get($key);
+      // Use a SET with microsecond expiration and the NX flag, which will only
+      // succeed if the key does not exist yet.
+      $result = $this->client->set($key, $id, ['nx', 'px' => (int) ($timeout * 1000)]);
 
-      // If the $key is set they lock is not available
-      if (!empty($owner) && $id != $owner) {
-        $this->client->unwatch();
-        return FALSE;
-      }
-
-      // See https://github.com/nicolasff/phpredis#watch-unwatch
-      // MULTI and other commands can fail, so we can't chain calls.
-      if (FALSE !== ($result = $this->client->multi())) {
-        $this->client->setex($key, $timeout, $id);
-        $result->exec();
-      }
-
-      // If another client modified the $key value, transaction will be discarded
-      // $result will be set to FALSE. This means atomicity have been broken and
-      // the other client took the lock instead of us.
+      // If the result is FALSE, we failed to acquire the lock.
       if (FALSE === $result) {
-        // Explicit transaction release which also frees the WATCH'ed key.
-        $this->client->discard();
         return FALSE;
       }
 
@@ -127,11 +109,12 @@ class PhpRedis extends LockBackendAbstract {
    */
   public function lockMayBeAvailable($name) {
     $key    = $this->getKey($name);
-    $id     = $this->getLockId();
-
     $value = $this->client->get($key);
 
-    return FALSE === $value || $id == $value;
+    // In Drupal 7, this method treated the lock as available if the ID did
+    // match. The database backend and test expects it to return FALSE in that
+    // case, updated accordingly.
+    return FALSE === $value;
   }
 
   /**

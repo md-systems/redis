@@ -40,11 +40,14 @@ class LockFactory {
   /**
    * Get actual lock backend.
    *
+   * @param bool $persistent
+   *   (optional) Whether to return a persistent lock implementation or not.
+   *
    * @return \Drupal\Core\Lock\LockBackendInterface
    *   Return lock backend instance.
    */
-  public function get() {
-    $className = $this->clientFactory->getClass(ClientFactory::REDIS_IMPL_LOCK);
-    return new $className($this->clientFactory);
+  public function get($persistent = FALSE) {
+    $class_name = $this->clientFactory->getClass($persistent ? ClientFactory::REDIS_IMPL_PERSISTENT_LOCK : ClientFactory::REDIS_IMPL_LOCK);
+    return new $class_name($this->clientFactory);
   }
 }

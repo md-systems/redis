@@ -9,8 +9,7 @@ quite a dumb thing to do.
 Predis
 ------
 
-This implementation uses the Predis PHP library. It is compatible PHP 5.3
-only, and need Redis >= 2.1.0 for using the WATCH command.
+Support for the Predis library has not yet been ported to Drupal 8.
 
 PhpRedis
 --------
@@ -31,10 +30,8 @@ Note that most of the settings are shared. See next sections.
 Important notice
 ----------------
 
-This module only supports Redis >= 2.4 due to the missing WATCH command in
-Redis <= 2.2. Using it with older versions is untested, might work but might
-also cause you serious trouble. Any bug report raised using such version will
-be ignored.
+This module requires at least Redis 2.4, additionally, the lock backend
+requires Redis 2.6 to support millisecond timeouts and atomic lock operations.
 
 Getting started
 ===============
@@ -43,28 +40,25 @@ Quick setup
 -----------
 
 Here is a simple yet working easy way to setup the module.
+
 This method will Drupal to use Redis for all caches.
 
-  $settings['redis.connection']['interface'] = 'PhpRedis'; // Can be "Predis".
-  $settings['redis.connection']['host']      = '1.2.3.4';  // Your Redis instance hostname.
-  $settings['cache']['default'] = 'cache.backend.redis';
+    $settings['redis.connection']['interface'] = 'PhpRedis'; // Can be "Predis".
+    $settings['redis.connection']['host']      = '1.2.3.4';  // Your Redis instance hostname.
+    $settings['cache']['default'] = 'cache.backend.redis';
 
-  // Always set the fast backend for bootstrap, discover and config, otherwise
-  // this gets lost when redis is enabled.
-  $settings['cache']['bins']['bootstrap'] = 'cache.backend.chainedfast';
-  $settings['cache']['bins']['discovery'] = 'cache.backend.chainedfast';
-  $settings['cache']['bins']['config'] = 'cache.backend.chainedfast';
+    // Always set the fast backend for bootstrap, discover and config, otherwise
+    // this gets lost when redis is enabled.
+    $settings['cache']['bins']['bootstrap'] = 'cache.backend.chainedfast';
+    $settings['cache']['bins']['discovery'] = 'cache.backend.chainedfast';
+    $settings['cache']['bins']['config'] = 'cache.backend.chainedfast';
 
-To use the redis cache tag checksum implementation, put this in
-sites/default/services.yml or any other yml file that is loaded after
-core.services.yml:
+Either include the default example.services.yml from the module, which will
+replace all supported backend services (that currently includes the cache tags
+checksum service and the lock backends, check the file for the current list)
+or copy the service definitions into a site specific services.yml.
 
-services:
-  cache_tags.invalidator.checksum:
-    class: Drupal\redis\Cache\RedisCacheTagsChecksum
-    arguments: ['@redis.factory']
-    tags:
-      - { name: cache_tags_invalidator }
+    $settings['container_yamls'][] = 'modules/redis/example.services.yml';
 
 Note that for any of this, the redis module must be enabled. See next chapters
 for more information.
@@ -85,7 +79,7 @@ Choose the Redis client library to use
 
 Add into your settings.php file:
 
-  $settings['redis.connection']['interface'] = 'PhpRedis';
+    $settings['redis.connection']['interface'] = 'PhpRedis';
 
 You can replace 'PhpRedis' with 'Predis', depending on the library you chose. 
 
@@ -99,20 +93,16 @@ Tell Drupal to use the cache backend
 Usual cache backend configuration, as follows, to add into your settings.php
 file like any other backend:
 
-  # Use for all bins otherwise specified.
-  $settings['cache']['default'] = 'cache.backend.redis';
-
-  # Use this to only use it for specific cache bins.
-  $settings['cache']['bins']['render'] = 'cache.backend.redis';
+    # Use for all bins otherwise specified.
+    $settings['cache']['default'] = 'cache.backend.redis';
+  
+    # Use this to only use it for specific cache bins.
+    $settings['cache']['bins']['render'] = 'cache.backend.redis';
 
 Tell Drupal to use the lock backend
 -----------------------------------
 
-@todo: Update for Drupal 8
-
-Usual lock backend override, update you settings.php file as this:
-
-  $conf['lock_inc'] = 'sites/all/modules/redis/redis.lock.inc';
+See the provided example.services.yml file on how to override the lock services.
 
 Common settings
 ===============
@@ -122,9 +112,9 @@ Connect to a remote host
 
 If your Redis instance is remote, you can use this syntax:
 
-  $settings['redis.connection']['interface'] = 'PhpRedis'; // Can be "Predis".
-  $settings['redis.connection']['host']      = '1.2.3.4';  // Your Redis instance hostname.
-  $settings['redis.connection']['host']      = '6379';  // Redis port
+    $settings['redis.connection']['interface'] = 'PhpRedis'; // Can be "Predis".
+    $settings['redis.connection']['host']      = '1.2.3.4';  // Your Redis instance hostname.
+    $settings['redis.connection']['host']      = '6379';  // Redis port
 
 Port is optional, default is 6379 (default Redis port).
 
@@ -137,14 +127,14 @@ this one if nothing is specified.
 Depending on you OS or OS distribution, you might have numerous database. To
 use one in particular, just add to your settings.php file:
 
-  $settings['redis.connection']['base']      = 12;
+    $settings['redis.connection']['base']      = 12;
 
 Connection to a password protected instance
 -------------------------------------------
 
 If you are using a password protected instance, specify the password this way:
 
-  $settings['redis.connection']['base'] = "mypassword";
+    $settings['redis.connection']['base'] = "mypassword";
 
 Depending on the backend, using a wrong auth will behave differently:
 
@@ -166,12 +156,12 @@ backends that support this feature. This variable name is 'cache_prefix'.
 This variable is polymorphic, the simplest version is to provide a raw string
 that will be the default prefix for all cache bins:
 
-  $settings['cache_prefix'] = 'mysite_';
+    $settings['cache_prefix'] = 'mysite_';
 
 Alternatively, to provide the same functionality, you can provide the variable
 as an array:
 
-  $settings['cache_prefix']['default'] = 'mysite_';
+    $settings['cache_prefix']['default'] = 'mysite_';
 
 This allows you to provide different prefix depending on the bin name. Common
 usage is that each key inside the 'cache_prefix' array is a bin name, the value
@@ -185,15 +175,15 @@ bin.
 
 Here is a complex sample:
 
-  // Default behavior for all bins, prefix is 'mysite_'.
-  $settings['cache_prefix']['default'] = 'mysite_';
-
-  // Set no prefix explicitely for 'cache' and 'cache_bootstrap' bins.
-  $settings['cache_prefix']['cache'] = FALSE;
-  $settings['cache_prefix']['cache_bootstrap'] = FALSE;
-
-  // Set another prefix for 'cache_menu' bin.
-  $settings['cache_prefix']['cache_menu'] = 'menumysite_';
+    // Default behavior for all bins, prefix is 'mysite_'.
+    $settings['cache_prefix']['default'] = 'mysite_';
+  
+    // Set no prefix explicitely for 'cache' and 'cache_bootstrap' bins.
+    $settings['cache_prefix']['cache'] = FALSE;
+    $settings['cache_prefix']['cache_bootstrap'] = FALSE;
+  
+    // Set another prefix for 'cache_menu' bin.
+    $settings['cache_prefix']['cache_menu'] = 'menumysite_';
 
 Note that if you don't specify the default behavior, the Redis module will
 attempt to use the HTTP_HOST variable in order to provide a multisite safe

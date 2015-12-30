@@ -1,15 +1,9 @@
-Redis cache backends
+Redis backends
 ====================
 
-This package provides two different Redis cache backends. If you want to use
+This package provides two different Redis backends. If you want to use
 Redis as cache backend, you have to choose one of the two, but you cannot use
-both at the same time. Well, it will be technically possible, but it would be
-quite a dumb thing to do.
-
-Predis
-------
-
-Support for the Predis library has not yet been ported to Drupal 8.
+both at the same time.
 
 PhpRedis
 --------
@@ -17,15 +11,11 @@ PhpRedis
 This implementation uses the PhpRedis PHP extension. In order to use it, you
 will need to compile the extension yourself.
 
-Notes
------
+Predis
+------
 
-Both backends provide the exact same functionality. The major difference is
-because PhpRedis uses a PHP extension, and not PHP code, it performs better.
+Support for the Predis PHP library has not yet been ported to Drupal 8.
 
-Difference is not that visible, it's really only a few ms on my testing box.
-
-Note that most of the settings are shared. See next sections.
 
 Important notice
 ----------------

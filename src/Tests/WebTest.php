@@ -86,6 +86,7 @@ class WebTest extends WebTestBase {
     db_drop_table('cache_config');
     db_drop_table('cachetags');
     db_drop_table('semaphore');
+    db_drop_table('flood');
   }
 
   /**
@@ -150,6 +151,7 @@ class WebTest extends WebTestBase {
     $this->assertFalse(db_table_exists('cache_config'));
     $this->assertFalse(db_table_exists('cachetags'));
     $this->assertFalse(db_table_exists('semaphore'));
+    $this->assertFalse(db_table_exists('flood'));
   }
 
 }

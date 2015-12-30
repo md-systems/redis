@@ -26,3 +26,8 @@ services:
     class: Drupal\Core\Lock\LockBackendInterface
     factory: ['@redis.lock.factory', get]
     arguments: [true]
+
+  # Replaces the default flood backend with a redis implementation.
+  flood:
+    class: Drupal\Core\Flood\FloodInterface
+    factory: ['@redis.flood.factory', get]

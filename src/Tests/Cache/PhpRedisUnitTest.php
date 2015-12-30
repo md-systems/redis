@@ -8,8 +8,6 @@
 namespace Drupal\redis\Tests\Cache;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
-use Drupal\Core\Site\Settings;
-use Drupal\redis\Cache\PhpRedis;
 use Drupal\system\Tests\Cache\GenericCacheBackendUnitTestBase;
 use Symfony\Component\DependencyInjection\Reference;
 

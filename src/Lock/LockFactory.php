@@ -20,18 +20,7 @@ class LockFactory {
   protected $clientFactory;
 
   /**
-   * List of cache bins.
-   *
-   * Renderer and possibly other places fetch backends directly from the
-   * factory. Avoid that the backend objects have to fetch meta information like
-   * the last delete all timestamp multiple times.
-   *
-   * @var array
-   */
-  protected $bins = [];
-
-  /**
-   * Creates a redis CacheBackendFactory.
+   * Creates a redis LockFactory.
    */
   function __construct(ClientFactory $client_factory) {
     $this->clientFactory = $client_factory;

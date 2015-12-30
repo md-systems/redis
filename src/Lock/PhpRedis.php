@@ -72,14 +72,12 @@ class PhpRedis extends LockBackendAbstract {
         return FALSE;
       }
 
-      // See https://github.com/nicolasff/phpredis#watch-unwatch
-      // MULTI and other commands can fail, so we can't chain calls.
-      if (FALSE !== ($result = $this->client->multi())) {
-        $this->client->psetex($key, (int) ($timeout * 1000), $id);
-        $result = $this->client->exec();
-      }
+      $result = $this->client->multi()
+        ->psetex($key, (int) ($timeout * 1000), $id)
+        ->exec();
 
-      // Did it broke?
+      // If the set failed, someone else wrote the key, we failed to acquire
+      // the lock.
       if (FALSE === $result) {
         unset($this->locks[$name]);
         // Explicit transaction release which also frees the WATCH'ed key.
@@ -145,21 +143,10 @@ class PhpRedis extends LockBackendAbstract {
    * {@inheritdoc}
    */
   public function releaseAll($lock_id = NULL) {
-    if (!isset($lock_id) && empty($this->locks)) {
-      return;
-    }
-
-    $id     = isset($lock_id) ? $lock_id : $this->getLockId();
-
     // We can afford to deal with a slow algorithm here, this should not happen
     // on normal run because we should have removed manually all our locks.
     foreach ($this->locks as $name => $foo) {
-      $key   = $this->getKey($name);
-      $owner = $this->client->get($key);
-
-      if (empty($owner) || $owner == $id) {
-        $this->client->delete($key);
-      }
+      $this->release($name);
     }
   }
 }

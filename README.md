@@ -77,15 +77,14 @@ Advanced configuration
 Choose the Redis client library to use
 --------------------------------------
 
+Note: This is not yet supported, only the PhpRedis interface is available.
+
 Add into your settings.php file:
 
     $settings['redis.connection']['interface'] = 'PhpRedis';
 
 You can replace 'PhpRedis' with 'Predis', depending on the library you chose. 
 
-Note that this is optional but recommended. If you don't set this variable the
-module will proceed to class lookups and attempt to choose the best client
-available, having always a preference for the Predis one.
 
 Tell Drupal to use the cache backend
 ------------------------------------

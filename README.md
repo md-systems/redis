@@ -93,6 +93,30 @@ Tell Drupal to use the lock backend
 
 See the provided example.services.yml file on how to override the lock services.
 
+Tell Drupal to use the queue backend
+------------------------------------
+
+This module provides reliable and non-reliable queue implementations. Depending
+on which is to be use you need to choose "queue.redis" or "queue.redis_reliable"
+as a service name.
+
+When you have configured basic information (host, library, ... - see Quick setup)
+add this to your settings.php file:
+
+    # Use for all queues unless otherwise specified for a specific queue.
+    $settings['queue_default'] = 'queue.redis';
+
+    # Or if you want to use reliable queue implementation.
+    $settings['queue_default'] = 'queue.redis_reliable';
+
+
+    # Use this to only use Redis for a specific queue (aggregator_feeds in this case).
+    $settings['queue_service_aggregator_feeds'] = 'queue.redis';
+
+    # Or if you want to use reliable queue implementation.
+    $settings['queue_service_aggregator_feeds'] = 'queue.redis_reliable';
+
+
 Common settings
 ===============
 

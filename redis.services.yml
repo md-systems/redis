@@ -10,3 +10,9 @@ services:
   redis.flood.factory:
     class: Drupal\redis\Flood\FloodFactory
     arguments: ['@redis.factory', '@request_stack']
+  queue.redis_reliable:
+    class: Drupal\redis\Queue\ReliableQueueRedisFactory
+    arguments: ['@redis.factory', '@settings']
+  queue.redis:
+    class: Drupal\redis\Queue\QueueRedisFactory
+    arguments: ['@redis.factory', '@settings']

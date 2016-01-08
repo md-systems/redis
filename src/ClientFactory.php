@@ -63,6 +63,16 @@ class ClientFactory {
   const REDIS_IMPL_CLIENT = '\\Drupal\\redis\\Client\\';
 
   /**
+   * Queue implementation namespace.
+   */
+  const REDIS_IMPL_QUEUE = '\\Drupal\\redis\\Queue\\';
+
+  /**
+   * Reliable queue implementation namespace.
+   */
+  const REDIS_IMPL_RELIABLE_QUEUE = '\\Drupal\\redis\\Queue\\Reliable';
+
+  /**
    * @var \Drupal\redis\ClientInterface
    */
   protected static $_clientInterface;
@@ -89,7 +99,7 @@ class ClientFactory {
 
   /**
    * Lazy instanciate client proxy depending on the actual configuration.
-   * 
+   *
    * If you are using a lock, session or cache backend using one of the Redis
    * client implementation, this will be overrided at early bootstrap phase
    * and configuration will be ignored.
@@ -132,7 +142,7 @@ class ClientFactory {
 
   /**
    * Get underlaying library name.
-   * 
+   *
    * @return string
    */
   public static function getClientName() {
@@ -140,7 +150,7 @@ class ClientFactory {
   }
 
   /**
-   * Get client singleton. 
+   * Get client singleton.
    */
   public static function getClient() {
     if (!isset(self::$_client)) {
@@ -166,15 +176,15 @@ class ClientFactory {
   /**
    * Get specific class implementing the current client usage for the specific
    * asked core subsystem.
-   * 
+   *
    * @param string $system
    *   One of the ClientFactory::IMPL_* constant.
    * @param string $clientName
    *   Client name, if fixed.
-   * 
+   *
    * @return string
    *   Class name, if found.
-   * 
+   *
    * @throws \Exception
    *   If not found.
    */

@@ -1,0 +1,10 @@
+{
+  "name": "drupal/redis",
+  "type": "drupal-module",
+  "license": "GPL-2.0",
+  "autoload": {
+    "psr-4": {
+      "Drupal\\redis\\": "src"
+    }
+  }
+}

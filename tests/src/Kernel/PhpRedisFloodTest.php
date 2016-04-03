@@ -5,7 +5,7 @@
  * Contains \Drupal\KernelTests\redis\PhpRedisFloodTest.
  */
 
-namespace Drupal\KernelTests\redis;
+namespace Drupal\Tests\redis\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\redis\Flood\PhpRedis;

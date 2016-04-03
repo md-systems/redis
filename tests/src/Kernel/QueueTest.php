@@ -2,13 +2,13 @@
 
 /**
  * @file
- * Definition of Drupal\redis\Tests\QueueTest.
+ * Definition of Drupal\Tests\redis\Kernel\QueueTest.
  */
 
-namespace Drupal\redis\Tests;
+namespace Drupal\Tests\redis\Kernel;
 
 use Drupal\redis\ClientFactory;
-use Drupal\system\Tests\Queue\QueueTest as CoreQueueTest;
+use \Drupal\KernelTests\Core\Queue\QueueTest as CoreQueueTest;
 
 /**
  * Tests the Redis queue functions.
@@ -80,14 +80,14 @@ class QueueTest extends CoreQueueTest {
   /**
    * Overrides \Drupal\system\Tests\Queue\QueueTestQueueTest::testSystemQueue().
    *
-   * We override tests from core class we exted to prevent them from running.
+   * We override tests from core class we extend to prevent them from running.
    */
   public function testSystemQueue() {}
 
   /**
    * Overrides \Drupal\system\Tests\Queue\QueueTestQueueTest::testMemoryQueue().
    *
-   * We override tests from core class we exted to prevent them from running.
+   * We override tests from core class we extend to prevent them from running.
    */
   public function testMemoryQueue() {}
 }

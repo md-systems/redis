@@ -127,7 +127,7 @@ If your Redis instance is remote, you can use this syntax:
 
     $settings['redis.connection']['interface'] = 'PhpRedis'; // Can be "Predis".
     $settings['redis.connection']['host']      = '1.2.3.4';  // Your Redis instance hostname.
-    $settings['redis.connection']['host']      = '6379';  // Redis port
+    $settings['redis.connection']['port']      = '6379';  // Redis port
 
 Port is optional, default is 6379 (default Redis port).
 

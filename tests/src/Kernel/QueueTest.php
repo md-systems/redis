@@ -8,7 +8,7 @@
 namespace Drupal\Tests\redis\Kernel;
 
 use Drupal\redis\ClientFactory;
-use \Drupal\KernelTests\Core\Queue\QueueTest as CoreQueueTest;
+use Drupal\system\Tests\Queue\QueueTest as CoreQueueTest;
 
 /**
  * Tests the Redis queue functions.

@@ -147,7 +147,7 @@ Connection to a password protected instance
 
 If you are using a password protected instance, specify the password this way:
 
-    $settings['redis.connection']['base'] = "mypassword";
+    $settings['redis.connection']['password'] = "mypassword";
 
 Depending on the backend, using a wrong auth will behave differently:
 

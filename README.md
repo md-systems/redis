@@ -31,7 +31,7 @@ Quick setup
 
 Here is a simple yet working easy way to setup the module.
 
-This method will Drupal to use Redis for all caches.
+This method will allow Drupal to use Redis for all caches.
 
     $settings['redis.connection']['interface'] = 'PhpRedis'; // Can be "Predis".
     $settings['redis.connection']['host']      = '1.2.3.4';  // Your Redis instance hostname.

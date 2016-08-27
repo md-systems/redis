@@ -42,7 +42,7 @@ class CacheBackendFactory implements CacheFactoryInterface {
   /**
    * Creates a redis CacheBackendFactory.
    */
-  function __construct(ClientFactory $client_factory, CacheTagsChecksumInterface $checksum_provider) {
+  public function __construct(ClientFactory $client_factory, CacheTagsChecksumInterface $checksum_provider) {
     $this->clientFactory = $client_factory;
     $this->checksumProvider = $checksum_provider;
   }

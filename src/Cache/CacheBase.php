@@ -88,7 +88,7 @@ abstract class CacheBase implements CacheBackendInterface {
     return $this->permTtl;
   }
 
-  function __construct($bin) {
+  public function __construct($bin) {
     $this->bin = $bin;
     $this->setPermTtl();
   }

@@ -31,7 +31,7 @@ class ReliablePredis extends ReliableQueueBase {
    * @param \Predis\Client $client
    *   The Predis client.
    */
-  function __construct($name, array $settings, \Predis\Client $client) {
+  public function __construct($name, array $settings, \Predis\Client $client) {
     parent::__construct($name, $settings);
     $this->client = $client;
   }

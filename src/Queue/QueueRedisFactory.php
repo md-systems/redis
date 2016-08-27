@@ -38,7 +38,7 @@ class QueueRedisFactory {
    * @param \Drupal\Core\Database\Connection $connection
    *   The Connection object containing the key-value tables.
    */
-  function __construct(ClientFactory $client_factory, Settings $settings) {
+  public function __construct(ClientFactory $client_factory, Settings $settings) {
     $this->clientFactory = $client_factory;
     $this->settings = $settings;
   }

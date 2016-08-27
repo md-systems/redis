@@ -22,7 +22,7 @@ class LockFactory {
   /**
    * Creates a redis LockFactory.
    */
-  function __construct(ClientFactory $client_factory) {
+  public function __construct(ClientFactory $client_factory) {
     $this->clientFactory = $client_factory;
   }
 

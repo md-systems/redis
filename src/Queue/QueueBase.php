@@ -79,7 +79,7 @@ abstract class QueueBase {
    * @param array $settings
    *   Array of Redis-related settings for this queue.
    */
-  function __construct($name, array $settings) {
+  public function __construct($name, array $settings) {
     $this->name = $name;
     $this->reserveTimeout = $settings['reserve_timeout'];
     $this->availableListKey = static::KEY_PREFIX . $name . ':avail';

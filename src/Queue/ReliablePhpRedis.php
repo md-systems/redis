@@ -31,7 +31,7 @@ class ReliablePhpRedis extends ReliableQueueBase {
    * @param \Redis $client
    *   The PhpRedis client.
    */
-  function __construct($name, array $settings, \Redis $client) {
+  public function __construct($name, array $settings, \Redis $client) {
     parent::__construct($name, $settings);
     $this->client = $client;
   }

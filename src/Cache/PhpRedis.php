@@ -37,7 +37,7 @@ class PhpRedis extends CacheBase {
   /**
    * Creates a PHpRedis cache backend.
    */
-  function __construct($bin, \Redis $client, CacheTagsChecksumInterface $checksum_provider) {
+  public function __construct($bin, \Redis $client, CacheTagsChecksumInterface $checksum_provider) {
     parent::__construct($bin);
     $this->client = $client;
     $this->checksumProvider = $checksum_provider;

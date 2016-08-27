@@ -43,7 +43,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
   /**
    * Creates a PHpRedis cache backend.
    */
-  function __construct(ClientFactory $factory) {
+  public function __construct(ClientFactory $factory) {
     $this->client = $factory->getClient();
   }
 

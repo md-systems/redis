@@ -53,12 +53,7 @@ class ClientFactory {
   const REDIS_IMPL_PERSISTENT_LOCK = '\\Drupal\\redis\\PersistentLock\\';
 
   /**
-   * Session implementation namespace.
-   */
-  const REDIS_IMPL_SESSION = '\\Drupal\\redis\\Session\\';
-
-  /**
-   * Session implementation namespace.
+   * Client implementation namespace.
    */
   const REDIS_IMPL_CLIENT = '\\Drupal\\redis\\Client\\';
 
@@ -100,9 +95,9 @@ class ClientFactory {
   /**
    * Lazy instanciate client proxy depending on the actual configuration.
    *
-   * If you are using a lock, session or cache backend using one of the Redis
-   * client implementation, this will be overrided at early bootstrap phase
-   * and configuration will be ignored.
+   * If you are using a lock or cache backend using one of the Redis client
+   * implementations, this will be overridden at early bootstrap phase and
+   * configuration will be ignored.
    *
    * @return ClientInterface
    */

@@ -17,8 +17,8 @@ function redis_help($path, $arg) {
   switch ($path) {
     case 'admin/config/development/performance/redis':
       $messages = 
-        '<p>' . t("Redis module is optional if you are using only a cache, lock or session backend. The full API will be automatically loaded and its configuration will live into the <em>settings.php</em> file. If you access to this screen, it's probably because another contrib module needs it as a dependency for using the Redis client. If you didn't enabled such module, you are strongly advised to disable the Redis module on the module page.") . '</p>' . 
-        '<p>' . t("While Redis client configuration can be changed through the web, if you are using a cache, lock or session backend they must be set in the <em>settings.php</em> file. Once this done, any modification done using this form will be ignored, and real settings in use will be get at early bootstrap phase, before the configuration system is bootstrapped.") . '</p>';
+        '<p>' . t("Redis module is optional if you are using only a cache or lock backend. The full API will be automatically loaded and its configuration will live into the <em>settings.php</em> file. If you access to this screen, it's probably because another contrib module needs it as a dependency for using the Redis client. If you didn't enabled such module, you are strongly advised to disable the Redis module on the module page.") . '</p>' . 
+        '<p>' . t("While Redis client configuration can be changed through the web, if you are using a cache or lock backend they must be set in the <em>settings.php</em> file. Once this done, any modification done using this form will be ignored, and real settings in use will be get at early bootstrap phase, before the configuration system is bootstrapped.") . '</p>';
       if (ClientFactory::hasClient()) {
         $messages .= '<p><strong>' . t("Current connected client uses the <em>@name</em> library.", array('@name' => ClientFactory::getClientName())) . '</strong></p>';
       }

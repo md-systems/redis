@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\AbstractBackend.
- */
-
 namespace Drupal\redis;
 
 use Drupal\Core\Site\Settings;

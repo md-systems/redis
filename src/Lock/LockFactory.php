@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\redis\Lock\LockFactory.
- */
-
 namespace Drupal\redis\Lock;
 
 use Drupal\redis\ClientFactory;

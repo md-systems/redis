@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\redis\Client\Predis.
- */
-
 namespace Drupal\redis\Client;
 
 use Drupal\redis\ClientInterface;
@@ -24,7 +19,7 @@ class Predis implements ClientInterface {
    * autoloader by ourself. This will ensure no crash. Best way would have
    * been that Drupal ships a PSR-0 autoloader, in which we could manually
    * add our library path.
-   * 
+   *
    * We cannot do that in the file header, PHP class_exists() function wont
    * see classes being loaded during the autoloading because this file is
    * loaded by another autoloader: attempting the class_exists() during a

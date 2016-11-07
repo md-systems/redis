@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Flood\PhpRedis.
- */
-
 namespace Drupal\redis\Flood;
 
 use Drupal\Core\Flood\FloodInterface;

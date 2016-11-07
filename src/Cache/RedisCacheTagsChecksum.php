@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Cache\RedisCacheTagsChecksum.
- */
-
 namespace Drupal\redis\Cache;
 
 use Drupal\Core\Cache\CacheTagsChecksumInterface;

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\KernelTests\redis\PhpRedisFloodTest.
- */
-
 namespace Drupal\Tests\redis\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;

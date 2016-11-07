@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Queue\QueueBase.
- */
-
 namespace Drupal\redis\Queue;
 
 /**

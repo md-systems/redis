@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Lock\PhpRedis.
- */
-
 namespace Drupal\redis\Lock;
 
 use Drupal\Core\Lock\LockBackendAbstract;

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Cache\PhpRedis.
- */
-
 namespace Drupal\redis\Cache;
 
 use Drupal\Core\Cache\Cache;

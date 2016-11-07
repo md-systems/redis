@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\ClientFactory.
- */
-
 namespace Drupal\redis;
 use Drupal\Core\Site\Settings;
 

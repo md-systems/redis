@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Definition of Drupal\Tests\redis\Kernel\QueueTest.
- */
-
 namespace Drupal\Tests\redis\Kernel;
 
 use Drupal\redis\ClientFactory;

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Cache\CacheBase.
- */
-
 namespace Drupal\redis\Cache;
 
 use \DateInterval;

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Queue\ReliableQueueBase.
- */
-
 namespace Drupal\redis\Queue;
 
 use Drupal\Core\Queue\ReliableQueueInterface;

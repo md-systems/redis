@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Cache\CacheBackendFactory.
- */
-
 namespace Drupal\redis\Cache;
 
 use Drupal\Core\Cache\CacheFactoryInterface;

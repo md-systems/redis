@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Queue\ReliablePhpRedis.
- */
-
 namespace Drupal\redis\Queue;
 
 /**

@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Queue\ReliablePredis.
- */
-
 namespace Drupal\redis\Queue;
 
 /**

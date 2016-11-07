@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Queue\ReliableQueueRedisFactory.
- */
-
 namespace Drupal\redis\Queue;
 
 use Drupal\redis\ClientFactory;

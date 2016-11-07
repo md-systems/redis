@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\Tests\WebTest.
- */
-
 namespace Drupal\redis\Tests;
 
 use Drupal\Component\Utility\OpCodeCache;

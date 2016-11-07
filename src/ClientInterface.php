@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\ClientInterface.
- */
-
 namespace Drupal\redis;
 
 /**
@@ -13,7 +8,7 @@ namespace Drupal\redis;
 interface ClientInterface {
   /**
    * Get the connected client instance.
-   * 
+   *
    * @return mixed
    *   Real client depends from the library behind.
    */
@@ -21,10 +16,10 @@ interface ClientInterface {
 
   /**
    * Get underlaying library name used.
-   * 
+   *
    * This can be useful for contribution code that may work with only some of
    * the provided clients.
-   * 
+   *
    * @return string
    */
   public function getName();

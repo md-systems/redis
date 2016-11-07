@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis\PersistentLock\PhpRedis.
- */
-
 namespace Drupal\redis\PersistentLock;
 
 use Drupal\redis\ClientFactory;

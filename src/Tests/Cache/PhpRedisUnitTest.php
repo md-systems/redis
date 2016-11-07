@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Definition of Drupal\redis\Tests\Cache\PhpRedisUnitTest.
- */
-
 namespace Drupal\redis\Tests\Cache;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;

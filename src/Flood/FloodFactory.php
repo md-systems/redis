@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains Drupal\redis\Flood\FloodFactory.
- */
-
 namespace Drupal\redis\Flood;
 
 use Drupal\redis\ClientFactory;

@@ -3,6 +3,7 @@
 namespace Drupal\redis\Cache;
 
 use \DateInterval;
+use Drupal\Component\Serialization\SerializationInterface;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Site\Settings;
@@ -51,6 +52,13 @@ abstract class CacheBase implements CacheBackendInterface {
   protected $bin;
 
   /**
+   * The serialization class to use.
+   *
+   * @var \Drupal\Component\Serialization\SerializationInterface
+   */
+  protected $serializer;
+
+  /**
    * Default TTL for CACHE_PERMANENT items.
    *
    * See "Default lifetime for permanent items" section of README.txt
@@ -83,8 +91,16 @@ abstract class CacheBase implements CacheBackendInterface {
     return $this->permTtl;
   }
 
-  public function __construct($bin) {
+  /**
+   * CacheBase constructor.
+   * @param $bin
+   *   The cache bin for which the object is created.
+   * @param \Drupal\Component\Serialization\SerializationInterface $serializer
+   *   The serialization class to use.
+   */
+  public function __construct($bin, SerializationInterface $serializer) {
     $this->bin = $bin;
+    $this->serializer = $serializer;
     $this->setPermTtl();
   }
 

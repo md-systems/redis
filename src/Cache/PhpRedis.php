@@ -2,6 +2,7 @@
 
 namespace Drupal\redis\Cache;
 
+use Drupal\Component\Serialization\SerializationInterface;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheTagsChecksumInterface;
 
@@ -31,9 +32,16 @@ class PhpRedis extends CacheBase {
 
   /**
    * Creates a PHpRedis cache backend.
+   *
+   * @param $bin
+   *   The cache bin for which the object is created.
+   * @param \Redis $client
+   * @param \Drupal\Core\Cache\CacheTagsChecksumInterface $checksum_provider
+   * @param \Drupal\redis\Cache\SerializationInterface $serializer
+   *   The serialization class to use.
    */
-  public function __construct($bin, \Redis $client, CacheTagsChecksumInterface $checksum_provider) {
-    parent::__construct($bin);
+  public function __construct($bin, \Redis $client, CacheTagsChecksumInterface $checksum_provider, SerializationInterface $serializer) {
+    parent::__construct($bin, $serializer);
     $this->client = $client;
     $this->checksumProvider = $checksum_provider;
   }
@@ -196,7 +204,7 @@ class PhpRedis extends CacheBase {
 
     // Let Redis handle the data types itself.
     if (!is_string($data)) {
-      $hash['data'] = serialize($data);
+      $hash['data'] = $this->serializer->encode($data);
       $hash['serialized'] = 1;
     }
     else {
@@ -254,7 +262,7 @@ class PhpRedis extends CacheBase {
     }
 
     if ($cache->serialized) {
-      $cache->data = unserialize($cache->data);
+      $cache->data = $this->serializer->decode($cache->data);
     }
 
     return $cache;

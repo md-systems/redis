@@ -2,6 +2,7 @@
 
 namespace Drupal\redis\Cache;
 
+use Drupal\Component\Serialization\SerializationInterface;
 use Drupal\Core\Cache\CacheFactoryInterface;
 use Drupal\Core\Cache\CacheTagsChecksumInterface;
 use Drupal\redis\ClientFactory;
@@ -24,6 +25,13 @@ class CacheBackendFactory implements CacheFactoryInterface {
   protected $checksumProvider;
 
   /**
+   * The serialization class to use.
+   *
+   * @var \Drupal\Component\Serialization\SerializationInterface
+   */
+  protected $serializer;
+
+  /**
    * List of cache bins.
    *
    * Renderer and possibly other places fetch backends directly from the
@@ -36,10 +44,16 @@ class CacheBackendFactory implements CacheFactoryInterface {
 
   /**
    * Creates a redis CacheBackendFactory.
+   *
+   * @param \Drupal\redis\ClientFactory $client_factory
+   * @param \Drupal\Core\Cache\CacheTagsChecksumInterface $checksum_provider
+   * @param \Drupal\redis\Cache\SerializationInterface $serializer
+   *   The serialization class to use.
    */
-  public function __construct(ClientFactory $client_factory, CacheTagsChecksumInterface $checksum_provider) {
+  public function __construct(ClientFactory $client_factory, CacheTagsChecksumInterface $checksum_provider, SerializationInterface $serializer) {
     $this->clientFactory = $client_factory;
     $this->checksumProvider = $checksum_provider;
+    $this->serializer = $serializer;
   }
 
   /**
@@ -48,7 +62,7 @@ class CacheBackendFactory implements CacheFactoryInterface {
   public function get($bin) {
     if (!isset($this->bins[$bin])) {
       $class_name = $this->clientFactory->getClass(ClientFactory::REDIS_IMPL_CACHE);
-      $this->bins[$bin] = new $class_name($bin, $this->clientFactory->getClient(), $this->checksumProvider);
+      $this->bins[$bin] = new $class_name($bin, $this->clientFactory->getClient(), $this->checksumProvider, $this->serializer);
     }
     return $this->bins[$bin];
   }

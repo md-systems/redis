@@ -24,7 +24,7 @@ class Predis extends CacheBase {
     $cached = (object)$cached;
 
     if ($cached->serialized) {
-      $cached->data = unserialize($cached->data);
+      $cached->data = $this->serializer->decode($cached->data);
     }
 
     return $cached;
@@ -63,7 +63,7 @@ class Predis extends CacheBase {
         }
 
         if ($cache->serialized) {
-          $cache->data = unserialize($cache->data);
+          $cache->data = $this->serializer->decode($cache->data);
         }
 
         $ret[$cache->cid] = $cache;
@@ -98,7 +98,7 @@ class Predis extends CacheBase {
       );
 
       if (!is_scalar($data)) {
-        $hash['data'] = serialize($data);
+        $hash['data'] = $this->serializer->encode($data);
         $hash['serialized'] = 1;
       }
       else {

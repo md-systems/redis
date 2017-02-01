@@ -1,7 +1,7 @@
 services:
   cache.backend.redis:
     class: Drupal\redis\Cache\CacheBackendFactory
-    arguments: ['@redis.factory', '@cache_tags.invalidator.checksum']
+    arguments: ['@redis.factory', '@cache_tags.invalidator.checksum', '@serialization.phpserialize']
   redis.factory:
     class: Drupal\redis\ClientFactory
   redis.lock.factory:

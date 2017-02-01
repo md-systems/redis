@@ -57,12 +57,9 @@ trait RedisPrefixTrait {
       }
     }
 
-    if (empty($ret) && isset($_SERVER['HTTP_HOST'])) {
-      // Provide a fallback for multisite. This is on purpose not inside the
-      // getPrefixForBin() function in order to decouple the unified prefix
-      // variable logic and custom module related security logic, that is not
-      // necessary for all backends.
-      $ret = $_SERVER['HTTP_HOST'] . '_';
+    if (empty($ret)) {
+      // If no prefix is given, use the same logic as core for APCu caching.
+      $ret = Settings::getApcuPrefix('redis', DRUPAL_ROOT);
     }
 
     return $ret;

@@ -88,7 +88,7 @@ env:
     #- DRUPAL_TI_RUNNERS="phpunit"
     #- DRUPAL_TI_RUNNERS="simpletest"
     #- DRUPAL_TI_RUNNERS="behat"
-    - DRUPAL_TI_RUNNERS="phpunit-core simpletest"
+    - DRUPAL_TI_RUNNERS="phpunit-core"
 
 # This will create the database
 mysql:

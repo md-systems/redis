@@ -1,20 +1,19 @@
 <?php
 
-namespace Drupal\redis\Tests;
+namespace Drupal\Tests\redis\Functional;
 
 use Drupal\Component\Utility\OpCodeCache;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Site\Settings;
 use Drupal\field_ui\Tests\FieldUiTestTrait;
-use Drupal\simpletest\WebTestBase;
-use Symfony\Component\Yaml\Yaml;
+use Drupal\Tests\BrowserTestBase;
 
 /**
  * Tests complex processes like installing modules with redis backends.
  *
  * @group redis
  */
-class WebTest extends WebTestBase {
+class WebTest extends BrowserTestBase {
 
   use FieldUiTestTrait;
 
@@ -34,7 +33,9 @@ class WebTest extends WebTestBase {
     $this->drupalPlaceBlock('system_breadcrumb_block');
     $this->drupalPlaceBlock('local_tasks_block');
 
-    $cache_configuration = [
+    // Set in-memory settings.
+    $settings = Settings::getAll();
+    $settings['cache'] = [
       'default' => 'cache.backend.redis',
       'bins' => [
         'config' => 'cache.backend.chainedfast',
@@ -42,8 +43,10 @@ class WebTest extends WebTestBase {
         'discovery' => 'cache.backend.chainedfast',
       ],
     ];
-    $this->settingsSet('cache', $cache_configuration);
+    new Settings($settings);
 
+    // Write settings.php for HTTP requests.
+    $settings = [];
     $settings['settings']['cache']['default'] = (object) array(
       'value' => 'cache.backend.redis',
       'required' => TRUE,
@@ -92,14 +95,14 @@ class WebTest extends WebTestBase {
     $this->drupalLogin($admin_user);
 
     // Enable a few modules.
-    $edit["modules[Core][node][enable]"] = TRUE;
-    $edit["modules[Core][views][enable]"] = TRUE;
-    $edit["modules[Core][field_ui][enable]"] = TRUE;
-    $edit["modules[Field types][text][enable]"] = TRUE;
+    $edit["modules[node][enable]"] = TRUE;
+    $edit["modules[views][enable]"] = TRUE;
+    $edit["modules[field_ui][enable]"] = TRUE;
+    $edit["modules[text][enable]"] = TRUE;
     $this->drupalPostForm('admin/modules', $edit, t('Install'));
     $this->drupalPostForm(NULL, [], t('Continue'));
-    $this->assertText('6 modules have been enabled: Field UI, Node, Views, Text, Field, Filter.');
-    $this->assertFieldChecked('edit-modules-core-field-ui-enable');
+    $this->assertSession()->responseContains('6 modules have been enabled: Field UI, Node, Text, Views, Field, Filter.');
+    $this->assertSession()->checkboxChecked('edit-modules-field-ui-enable');
 
     // Create a node type with a field.
     $edit = [

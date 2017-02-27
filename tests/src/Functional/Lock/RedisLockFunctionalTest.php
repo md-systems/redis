@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\redis\Functional\Lock;
+namespace Drupal\Tests\redis\Functional\Lock;
 
 use Drupal\Component\Utility\OpCodeCache;
 use Drupal\Core\Site\Settings;

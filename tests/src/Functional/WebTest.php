@@ -101,8 +101,19 @@ class WebTest extends BrowserTestBase {
     $edit["modules[text][enable]"] = TRUE;
     $this->drupalPostForm('admin/modules', $edit, t('Install'));
     $this->drupalPostForm(NULL, [], t('Continue'));
-    $this->assertSession()->responseContains('6 modules have been enabled: Field UI, Node, Text, Views, Field, Filter.');
-    $this->assertSession()->checkboxChecked('edit-modules-field-ui-enable');
+
+    $assert = $this->assertSession();
+
+    // The order of the modules is not guaranteed, so just assert that they are
+    // all listed.
+    $assert->elementTextContains('css', '.messages--status', '6 modules have been enabled');
+    $assert->elementTextContains('css', '.messages--status', 'Field UI');
+    $assert->elementTextContains('css', '.messages--status', 'Node');
+    $assert->elementTextContains('css', '.messages--status', 'Text');
+    $assert->elementTextContains('css', '.messages--status', 'Views');
+    $assert->elementTextContains('css', '.messages--status', 'Field');
+    $assert->elementTextContains('css', '.messages--status', 'Filter');
+    $assert->checkboxChecked('edit-modules-field-ui-enable');
 
     // Create a node type with a field.
     $edit = [

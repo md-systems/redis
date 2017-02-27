@@ -1,20 +1,19 @@
 <?php
 
-namespace Drupal\redis\Tests;
+namespace Drupal\Tests\redis\Functional;
 
 use Drupal\Component\Utility\OpCodeCache;
 use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Site\Settings;
 use Drupal\field_ui\Tests\FieldUiTestTrait;
-use Drupal\simpletest\WebTestBase;
-use Symfony\Component\Yaml\Yaml;
+use Drupal\Tests\BrowserTestBase;
 
 /**
  * Tests complex processes like installing modules with redis backends.
  *
  * @group redis
  */
-class WebTest extends WebTestBase {
+class WebTest extends BrowserTestBase {
 
   use FieldUiTestTrait;
 
@@ -34,41 +33,56 @@ class WebTest extends WebTestBase {
     $this->drupalPlaceBlock('system_breadcrumb_block');
     $this->drupalPlaceBlock('local_tasks_block');
 
-    $cache_configuration = [
+    // Set in-memory settings.
+    $settings = Settings::getAll();
+    $settings['cache'] = [
       'default' => 'cache.backend.redis',
-      'bins' => [
-        'config' => 'cache.backend.chainedfast',
-        'bootstrap' => 'cache.backend.chainedfast',
-        'discovery' => 'cache.backend.chainedfast',
+    ];
+    $settings['container_yamls'][] = drupal_get_path('module', 'redis') . '/example.services.yml';
+
+    $settings['bootstrap_container_definition'] = [
+      'parameters' => [],
+      'services' => [
+        'redis.factory' => [
+          'class' => 'Drupal\redis\ClientFactory',
+        ],
+        'cache.backend.redis' => [
+          'class' => 'Drupal\redis\Cache\CacheBackendFactory',
+          'arguments' => ['@redis.factory', '@cache_tags_provider.container', '@serialization.phpserialize'],
+        ],
+        'cache.container' => [
+          'class' => '\Drupal\redis\Cache\PhpRedis',
+          'factory' => ['@cache.backend.redis', 'get'],
+          'arguments' => ['container'],
+        ],
+        'cache_tags_provider.container' => [
+          'class' => 'Drupal\redis\Cache\RedisCacheTagsChecksum',
+          'arguments' => ['@redis.factory'],
+        ],
+        'serialization.phpserialize' => [
+          'class' => 'Drupal\Component\Serialization\PhpSerialize',
+        ],
       ],
     ];
-    $this->settingsSet('cache', $cache_configuration);
-
-    $settings['settings']['cache']['default'] = (object) array(
-      'value' => 'cache.backend.redis',
-      'required' => TRUE,
-    );
-    $settings['settings']['cache']['bins'] = (object) array(
-      'value' => [
-        'config' => 'cache.backend.chainedfast',
-        'bootstrap' => 'cache.backend.chainedfast',
-        'discovery' => 'cache.backend.chainedfast',
-      ],
-      'required' => TRUE,
-    );
-
-    $this->writeSettings($settings);
+    new Settings($settings);
 
     // Write the containers_yaml update by hand, since writeSettings() doesn't
-    // support this syntax.
+    // support some of the definitions.
     $filename = $this->siteDirectory . '/settings.php';
     chmod($filename, 0666);
     $contents = file_get_contents($filename);
-    $contents .= "\n\n" . '$settings[\'container_yamls\'][] = \'modules/redis/example.services.yml\';';
+
+    // Add the container_yaml and cache definition.
+    $contents .= "\n\n" . '$settings["container_yamls"][] = "' . drupal_get_path('module', 'redis') . '/example.services.yml";';
+    $contents .= "\n\n" . '$settings["cache"] = ' . var_export($settings['cache'], TRUE) . ';';
+
+    // Add the classloader.
+    $contents .= "\n\n" . '$class_loader->addPsr4(\'Drupal\\\\redis\\\\\', \'' . drupal_get_path('module', 'redis') . '/src\');';
+
+    // Add the bootstrap container definition.
+    $contents .= "\n\n" . '$settings["bootstrap_container_definition"] = ' . var_export($settings['bootstrap_container_definition'], TRUE) . ';';
+
     file_put_contents($filename, $contents);
-    $settings = Settings::getAll();
-    $settings['container_yamls'][] = 'modules/redis/example.services.yml';
-    new Settings($settings);
     OpCodeCache::invalidate(DRUPAL_ROOT . '/' . $filename);
 
     // Reset the cache factory.
@@ -79,6 +93,7 @@ class WebTest extends WebTestBase {
     db_drop_table('cache_default');
     db_drop_table('cache_render');
     db_drop_table('cache_config');
+    db_drop_table('cache_container');
     db_drop_table('cachetags');
     db_drop_table('semaphore');
     db_drop_table('flood');
@@ -92,14 +107,25 @@ class WebTest extends WebTestBase {
     $this->drupalLogin($admin_user);
 
     // Enable a few modules.
-    $edit["modules[Core][node][enable]"] = TRUE;
-    $edit["modules[Core][views][enable]"] = TRUE;
-    $edit["modules[Core][field_ui][enable]"] = TRUE;
-    $edit["modules[Field types][text][enable]"] = TRUE;
+    $edit["modules[node][enable]"] = TRUE;
+    $edit["modules[views][enable]"] = TRUE;
+    $edit["modules[field_ui][enable]"] = TRUE;
+    $edit["modules[text][enable]"] = TRUE;
     $this->drupalPostForm('admin/modules', $edit, t('Install'));
     $this->drupalPostForm(NULL, [], t('Continue'));
-    $this->assertText('6 modules have been enabled: Field UI, Node, Views, Text, Field, Filter.');
-    $this->assertFieldChecked('edit-modules-core-field-ui-enable');
+
+    $assert = $this->assertSession();
+
+    // The order of the modules is not guaranteed, so just assert that they are
+    // all listed.
+    $assert->elementTextContains('css', '.messages--status', '6 modules have been enabled');
+    $assert->elementTextContains('css', '.messages--status', 'Field UI');
+    $assert->elementTextContains('css', '.messages--status', 'Node');
+    $assert->elementTextContains('css', '.messages--status', 'Text');
+    $assert->elementTextContains('css', '.messages--status', 'Views');
+    $assert->elementTextContains('css', '.messages--status', 'Field');
+    $assert->elementTextContains('css', '.messages--status', 'Filter');
+    $assert->checkboxChecked('edit-modules-field-ui-enable');
 
     // Create a node type with a field.
     $edit = [
@@ -144,6 +170,7 @@ class WebTest extends WebTestBase {
     $this->assertFalse(db_table_exists('cache_default'));
     $this->assertFalse(db_table_exists('cache_render'));
     $this->assertFalse(db_table_exists('cache_config'));
+    $this->assertFalse(db_table_exists('cache_container'));
     $this->assertFalse(db_table_exists('cachetags'));
     $this->assertFalse(db_table_exists('semaphore'));
     $this->assertFalse(db_table_exists('flood'));

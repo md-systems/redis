@@ -17,7 +17,6 @@ php:
 matrix:
   fast_finish: true
   allow_failures:
-    - php: 7
     - php: hhvm
 
 env:
@@ -63,8 +62,8 @@ env:
     - DRUPAL_TI_BEHAT_DRIVER="phantomjs"
     - DRUPAL_TI_BEHAT_BROWSER="firefox"
 
-    # Use Drupal 8.2.x to run tests.
-    - DRUPAL_TI_CORE_BRANCH="8.2.x"
+    # Use Drupal 8.3.x to run tests.
+    - DRUPAL_TI_CORE_BRANCH="8.3.x"
 
     # PHPUnit specific commandline arguments.
     - DRUPAL_TI_PHPUNIT_ARGS="--verbose --debug"
@@ -89,7 +88,7 @@ env:
     #- DRUPAL_TI_RUNNERS="phpunit"
     #- DRUPAL_TI_RUNNERS="simpletest"
     #- DRUPAL_TI_RUNNERS="behat"
-    - DRUPAL_TI_RUNNERS="phpunit-core simpletest"
+    - DRUPAL_TI_RUNNERS="phpunit-core"
 
 # This will create the database
 mysql:
@@ -101,8 +100,7 @@ services:
   - redis-server
 
 before_install:
-  - composer self-update
-  - composer global require "lionsad/drupal_ti:dev-master"
+  - composer global require "lionsad/drupal_ti:dev-master#396d11d200005eb68491d24170da0a98ae7f51b3"
   - drupal-ti before_install
 
 install:

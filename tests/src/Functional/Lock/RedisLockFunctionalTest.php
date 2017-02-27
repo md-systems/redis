@@ -1,10 +1,10 @@
 <?php
 
-namespace Drupal\redis\Tests;
+namespace Drupal\redis\Functional\Lock;
 
 use Drupal\Component\Utility\OpCodeCache;
 use Drupal\Core\Site\Settings;
-use Drupal\system\Tests\Lock\LockFunctionalTest;
+use Drupal\Tests\system\Functional\Lock\LockFunctionalTest;
 
 /**
  * Confirm locking works between two separate requests.

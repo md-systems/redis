@@ -101,7 +101,7 @@ services:
 
 before_install:
   - composer self-update
-  - composer global require "lionsad/drupal_ti:dev-master"
+  - composer global require "lionsad/drupal_ti:dev-master#a00d1ad64e9ea6cca872ab7869aaf1061bba6a73"
   - drupal-ti before_install
 
 install:

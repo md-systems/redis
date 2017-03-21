@@ -2,6 +2,8 @@
 
 namespace Drupal\redis\Client;
 
+use Drupal\Core\Logger\RfcLogLevel;
+use Drupal\Core\Site\Settings;
 use Drupal\redis\ClientInterface;
 
 /**
@@ -14,6 +16,15 @@ class PhpRedis implements ClientInterface {
    */
   public function getClient($host = NULL, $port = NULL, $base = NULL, $password = NULL) {
     $client = new \Redis();
+
+    // Sentinel mode, get the real master.
+    if (is_array($host)) {
+      $ip_host = $this->askForMaster($client, $host, $password);
+      if (is_array($ip_host)) {
+        list($host, $port) = $ip_host;
+      }
+    }
+
     $client->connect($host, $port);
 
     if (isset($password)) {
@@ -38,4 +49,49 @@ class PhpRedis implements ClientInterface {
   public function getName() {
     return 'PhpRedis';
   }
+
+  /**
+   * Connect to sentinels to get Redis master instance.
+   *
+   * Just asking one sentinels after another until given the master location.
+   * More info about this mode at https://redis.io/topics/sentinel.
+   *
+   * @param \Redis $client
+   *   The PhpRedis client.
+   * @param array $sentinels
+   *   An array of the sentinels' ip:port.
+   * @param string $password
+   *   An optional Sentinels' password.
+   *
+   * @return mixed
+   *   An array with ip & port of the Master instance or NULL.
+   */
+  protected function askForMaster(\Redis $client, array $sentinels = array(), $password = NULL) {
+
+    $ip_port = NULL;
+    $settings = Settings::get('redis.connection', []);
+    $settings += ['instance' => NULL];
+
+    if ($settings['instance']) {
+      foreach ($sentinels as $sentinel) {
+        list($host, $port) = explode(':', $sentinel);
+        // 0.5s timeout.
+        $client->connect($host, $port, 0.5);
+
+        if (isset($password)) {
+          $client->auth($password);
+        }
+
+        if ($client->isConnected()) {
+          $ip_port = $client->rawcommand('SENTINEL', 'get-master-addr-by-name', $settings['instance']);
+          if ($ip_port) {
+            break;
+          }
+        }
+        $client->close();
+      }
+    }
+    return $ip_port;
+  }
+
 }

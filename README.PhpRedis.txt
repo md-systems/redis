@@ -16,6 +16,23 @@ will probably need to compile it yourself.
 Default behavior is to connect via tcp://localhost:6379 but you might want to
 connect differently.
 
+Use the Sentinel high availability mode
+---------------------------------------
+
+Redis can provide a master/slave mode with sentinels server monitoring them.
+More information about setting it : https://redis.io/topics/sentinel.
+
+This mode needs the following settings:
+
+Modify the host as follow:
+    // Sentinels instances list with hostname:port format.
+    $settings['redis.connection']['host']      = array('1.2.3.4:5000','1.2.3.5:5000','1.2.3.6:5000');
+
+Add the new instance setting:
+
+    // Redis instance name.
+    $settings['redis.connection']['instance']  = 'instance_name';
+
 Connect via UNIX socket
 -----------------------
 

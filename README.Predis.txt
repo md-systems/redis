@@ -1,7 +1,7 @@
 Predis cache backend
 ====================
 
-This client, for now, is only able to use the Predis PHP library.
+WARNING: This client, for now, is not working with the Predis PHP library, it is only able to use PhpRedis (the php extension).
 
 The Predis library requires PHP 5.3 minimum. If your hosted environment does
 not ships with at least PHP 5.3, please do not use this cache backend.

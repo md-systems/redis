@@ -166,7 +166,7 @@ abstract class CacheBase implements CacheBackendInterface {
    *   May return negative values if the item is already expired.
    */
   protected function getExpiration($expire) {
-    if ($expire == Cache::PERMANENT || $expire > (time() + $this->permTtl)) {
+    if ($expire == Cache::PERMANENT || $expire > $this->permTtl) {
       return $this->permTtl;
     }
     return $expire - REQUEST_TIME;

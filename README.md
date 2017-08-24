@@ -37,12 +37,6 @@ This method will allow Drupal to use Redis for all caches.
     $settings['redis.connection']['host']      = '1.2.3.4';  // Your Redis instance hostname.
     $settings['cache']['default'] = 'cache.backend.redis';
 
-    // Always set the fast backend for bootstrap, discover and config, otherwise
-    // this gets lost when redis is enabled.
-    $settings['cache']['bins']['bootstrap'] = 'cache.backend.chainedfast';
-    $settings['cache']['bins']['discovery'] = 'cache.backend.chainedfast';
-    $settings['cache']['bins']['config'] = 'cache.backend.chainedfast';
-
 Either include the default example.services.yml from the module, which will
 replace all supported backend services (that currently includes the cache tags
 checksum service and the lock backends, check the file for the current list)

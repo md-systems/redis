@@ -4,13 +4,14 @@ namespace Drupal\Tests\redis\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\redis\Flood\PhpRedis;
+use Drupal\Core\Site\Settings;
 
 /**
- * Tests PhpRedis flood backend.
+ * Tests Redis flood backend.
  *
  * @group redis
  */
-class PhpRedisFloodTest extends KernelTestBase {
+class RedisFloodTest extends KernelTestBase {
 
   /**
    * Modules to enable.
@@ -23,6 +24,7 @@ class PhpRedisFloodTest extends KernelTestBase {
    * Test flood control.
    */
   public function testFlood() {
+    self::setUpSettings();
     $threshold = 2;
     $window = 1;
     $name = 'flood_test_cleanup';
@@ -49,6 +51,18 @@ class PhpRedisFloodTest extends KernelTestBase {
     $_SERVER['REQUEST_TIME'] += 2;
     $this->assertTrue($flood->isAllowed($name, $threshold));
 
+  }
+
+  /**
+   * Uses an env variable to set the redis client to use for this test.
+   */
+  protected function setUpSettings() {
+
+    // Write redis_interface settings manually.
+    $redis_interface = getenv('REDIS_INTERFACE');
+    $settings = Settings::getAll();
+    $settings['redis.connection']['interface'] = $redis_interface;
+    new Settings($settings);
   }
 
 }

@@ -31,10 +31,13 @@ class RedisLockFunctionalTest extends LockFunctionalTest {
     $filename = $this->siteDirectory . '/settings.php';
     chmod($filename, 0666);
     $contents = file_get_contents($filename);
+    $redis_interface = getenv('REDIS_INTERFACE');
     $contents .= "\n\n" . '$settings[\'container_yamls\'][] = \'modules/redis/example.services.yml\';';
+    $contents .= "\n\n" . '$settings["redis.connection"]["interface"] = \'' . $redis_interface . '\';';
     file_put_contents($filename, $contents);
     $settings = Settings::getAll();
     $settings['container_yamls'][] = 'modules/redis/example.services.yml';
+    $settings['redis.connection']['interface'] = '\'' .  $redis_interface . '\'';
     new Settings($settings);
     OpCodeCache::invalidate(DRUPAL_ROOT . '/' . $filename);
 

@@ -3,136 +3,133 @@
 namespace Drupal\redis\Lock;
 
 use Drupal\Core\Lock\LockBackendAbstract;
-use Drupal\redis\LockBase;
+use Drupal\redis\ClientFactory;
+use Drupal\redis\RedisPrefixTrait;
 
 /**
  * Predis lock backend implementation.
  */
 class Predis extends LockBackendAbstract {
 
-  public function lockAcquire($name, $timeout = 30.0) {
-    $client = ClientFactory::getClient();
+  use RedisPrefixTrait;
+
+  /**
+   * @var \Predis\Client
+   */
+  protected $client;
+
+  /**
+   * Creates a PHpRedis cache backend.
+   */
+  public function __construct(ClientFactory $factory) {
+    $this->client = $factory->getClient();
+    // __destruct() is causing problems with garbage collections, register a
+    // shutdown function instead.
+    drupal_register_shutdown_function(array($this, 'releaseAll'));
+  }
+
+  /**
+   * Generate a redis key name for the current lock name.
+   *
+   * @param string $name
+   *   Lock name.
+   *
+   * @return string
+   *   The redis key for the given lock.
+   */
+  protected function getKey($name) {
+    return $this->getPrefix() . ':lock:' . $name;
+  }
+
+  public function acquire($name, $timeout = 30.0) {
     $key    = $this->getKey($name);
     $id     = $this->getLockId();
 
-    // Insure that the timeout is at least 1 second, we cannot do otherwise with
-    // Redis, this is a minor change to the function signature, but in real life
-    // nobody will notice with so short duration.
-    $timeout = ceil(max($timeout, 1));
+    // Insure that the timeout is at least 1 ms.
+    $timeout = max($timeout, 0.001);
 
     // If we already have the lock, check for his owner and attempt a new EXPIRE
     // command on it.
-    if (isset($this->_locks[$name])) {
+    if (isset($this->locks[$name])) {
 
       // Create a new transaction, for atomicity.
-      $client->watch($key);
+      $this->client->watch($key);
 
       // Global tells us we are the owner, but in real life it could have expired
       // and another process could have taken it, check that.
-      if ($client->get($key) != $id) {
-        $client->unwatch($key);
-        unset($this->_locks[$name]);
+      if ($this->client->get($key) != $id) {
+        // Explicit UNWATCH we are not going to run the MULTI/EXEC block.
+        $this->client->unwatch();
+        unset($this->locks[$name]);
         return FALSE;
       }
 
-      $replies = $client->pipeline(function($pipe) use ($key, $timeout, $id) {
-        $pipe->multi();
-        $pipe->setex($key, $timeout, $id);
-        $pipe->exec();
-      });
+      $result = $this->client->pipeline()
+        ->psetex($key, (int) ($timeout * 1000), $id)
+        ->exec();
 
-      $execReply = array_pop($replies);
-
-      if (FALSE === $execReply[0]) {
-        unset($this->_locks[$name]);
+      // If the set failed, someone else wrote the key, we failed to acquire
+      // the lock.
+      if (FALSE === $result) {
+        unset($this->locks[$name]);
+        // Explicit transaction release which also frees the WATCH'ed key.
+        $this->client->discard();
         return FALSE;
       }
 
-      return TRUE;
+      return ($this->locks[$name] = TRUE);
     }
     else {
-      $client->watch($key);
-      $owner = $client->get($key);
+      // Use a SET with microsecond expiration and the NX flag, which will only
+      // succeed if the key does not exist yet.
+      $result = $this->client->set($key, $id, 'nx', 'px', (int) ($timeout * 1000));
 
-      if (!empty($owner) && $owner != $id) {
-        $client->unwatch();
-        unset($this->_locks[$name]);
+      // If the result is FALSE, we failed to acquire the lock.
+      if (FALSE === $result) {
         return FALSE;
       }
 
-      $replies = $client->pipeline(function($pipe) use ($key, $timeout, $id) {
-        $pipe->multi();
-        $pipe->setex($key, $timeout, $id);
-        $pipe->exec();
-      });
-
-      $execReply = array_pop($replies);
-
-      // If another client modified the $key value, transaction will be discarded
-      // $result will be set to FALSE. This means atomicity have been broken and
-      // the other client took the lock instead of us.
-      // EXPIRE and SETEX won't return something here, EXEC return is index 0
-      // This was determined debugging, seems to be Predis specific.
-      if (FALSE === $execReply[0]) {
-        return FALSE;
-      }
-
-      // Register the lock and return.
-      return ($this->_locks[$name] = TRUE);
+      // Register the lock.
+      return ($this->locks[$name] = TRUE);
     }
-
-    return FALSE;
   }
 
   public function lockMayBeAvailable($name) {
-    $client = ClientFactory::getClient();
-    $key    = $this->getKey($name);
-    $id     = $this->getLockId();
+    $key = $this->getKey($name);
+    $value = $this->client->get($key);
 
-    $value = $client->get($key);
-
-    return empty($value) || $id == $value;
+    // In Drupal 7, this method treated the lock as available if the ID did
+    // match. The database backend and test expects it to return FALSE in that
+    // case, updated accordingly.
+    return FALSE === $value;
   }
 
-  public function lockRelease($name) {
-    $client = ClientFactory::getClient();
+  public function release($name) {
     $key    = $this->getKey($name);
     $id     = $this->getLockId();
 
-    unset($this->_locks[$name]);
+    unset($this->locks[$name]);
 
     // Ensure the lock deletion is an atomic transaction. If another thread
     // manages to removes all lock, we can not alter it anymore else we will
     // release the lock for the other thread and cause race conditions.
-    $client->watch($key);
+    $this->client->watch($key);
 
-    if ($client->get($key) == $id) {
-      $client->multi();
-      $client->del(array($key));
-      $client->exec();
+    if ($this->client->get($key) == $id) {
+      $pipe = $this->client->pipeline();
+      $pipe->del([$key]);
+      $pipe->execute();
     }
     else {
-      $client->unwatch();
+      $this->client->unwatch();
     }
   }
 
-  public function lockReleaseAll($lock_id = NULL) {
-    if (!isset($lock_id) && empty($this->_locks)) {
-      return;
-    }
-
-    $client = ClientFactory::getClient();
-    $id     = isset($lock_id) ? $lock_id : $this->getLockId();
-
+  public function releaseAll($lock_id = NULL) {
     // We can afford to deal with a slow algorithm here, this should not happen
     // on normal run because we should have removed manually all our locks.
-    foreach ($this->_locks as $name => $foo) {
-      $key   = $this->getKey($name);
-      $owner = $client->get($key);
-
-      if (empty($owner) || $owner == $id) {
-        $client->del(array($key));
-      }
+    foreach ($this->locks as $name => $foo) {
+      $this->release($name);
     }
   }
 }

@@ -35,7 +35,6 @@ class ReliablePredis extends ReliableQueueBase {
    * {@inheritdoc}
    */
   public function createItem($data) {
-    // TODO: Fixme
     $record = new \stdClass();
     $record->data = $data;
     $record->qid = $this->incrementId();
@@ -43,15 +42,15 @@ class ReliablePredis extends ReliableQueueBase {
     // by a single request which takes longer than 1 second.
     $record->timestamp = time();
 
-    $result = $this->client->multi()
-      ->hsetnx($this->availableItems, $record->qid, serialize($record))
-      ->lLen($this->availableListKey)
-      ->lpush($this->availableListKey, $record->qid)
-      ->exec();
+    $pipe = $this->client->pipeline();
+    $pipe->hsetnx($this->availableItems, $record->qid, serialize($record));
+    $pipe->lLen($this->availableListKey);
+    $pipe->lpush($this->availableListKey, $record->qid);
+    $result = $pipe->execute();
 
     $success = $result[0] && $result[2] > $result[1];
 
-    return $success ? $data->qid : FALSE;
+    return $success ? $record->qid : FALSE;
   }
 
   /**
@@ -77,14 +76,24 @@ class ReliablePredis extends ReliableQueueBase {
    * {@inheritdoc}
    */
   public function claimItem($lease_time = 30) {
-    // TODO: Fixme
+    // Is it OK to do garbage collection here (we need to loop list of claimed
+    // items)?
+    $this->garbageCollection();
     $item = FALSE;
-    $qid = $this->client->rpoplpush($this->avail, $this->claimed);
+
+    if ($this->reserveTimeout !== NULL) {
+      // A blocking version of claimItem to be used with long-running queue workers.
+      $qid = $this->client->brpoplpush($this->availableListKey, $this->claimedListKey, $this->reserveTimeout);
+    }
+    else {
+      $qid = $this->client->rpoplpush($this->availableListKey, $this->claimedListKey);
+    }
+
     if ($qid) {
-      $job = $this->client->hget($this->avail . '_hash', $qid);
+      $job = $this->client->hget($this->availableItems, $qid);
       if ($job) {
         $item = unserialize($job);
-        $this->client->setex($this->lease . $item->qid, $lease_time, '1');
+        $this->client->setex($this->leasedKeyPrefix . $item->qid, $lease_time, '1');
       }
     }
 
@@ -96,7 +105,7 @@ class ReliablePredis extends ReliableQueueBase {
    */
   public function releaseItem($item) {
     // TODO: Fixme
-    $this->client->multi()
+    $this->client->pipeline()
       ->lrem($this->claimedListKey, $item->qid, -1)
       ->lpush($this->availableListKey, $item->qid)
       ->exec();
@@ -107,7 +116,7 @@ class ReliablePredis extends ReliableQueueBase {
    */
   public function deleteItem($item) {
     // TODO: Fixme
-    $this->client->multi()
+    $this->client->pipeline()
       ->lrem($this->claimedListKey, $item->qid, -1)
       ->hdel($this->availableItems, $item->qid)
       ->exec();
@@ -130,5 +139,18 @@ class ReliablePredis extends ReliableQueueBase {
     }
 
     $this->client->del($keys_to_remove);
+  }
+
+  /**
+   * Automatically release items, that have been claimed and exceeded lease time.
+   */
+  protected function garbageCollection() {
+    foreach ($this->client->lrange($this->claimedListKey, 0, -1) as $qid) {
+      if (!$this->client->exists($this->leasedKeyPrefix . $qid)) {
+        // The lease expired for this ID.
+        $this->client->lrem($this->claimedListKey, $qid, -1);
+        $this->client->lpush($this->availableListKey, $qid);
+      }
+    }
   }
 }

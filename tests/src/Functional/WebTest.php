@@ -35,9 +35,15 @@ class WebTest extends BrowserTestBase {
 
     // Set in-memory settings.
     $settings = Settings::getAll();
+
+    // Get REDIS_INTERFACE env variable.
+    $redis_interface = getenv('REDIS_INTERFACE');
+    $settings['redis.connection']['interface'] = $redis_interface;
+
     $settings['cache'] = [
       'default' => 'cache.backend.redis',
     ];
+
     $settings['container_yamls'][] = drupal_get_path('module', 'redis') . '/example.services.yml';
 
     $settings['bootstrap_container_definition'] = [

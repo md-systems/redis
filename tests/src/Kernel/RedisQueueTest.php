@@ -4,13 +4,14 @@ namespace Drupal\Tests\redis\Kernel;
 
 use Drupal\redis\ClientFactory;
 use \Drupal\KernelTests\Core\Queue\QueueTest as CoreQueueTest;
+use Drupal\Core\Site\Settings;
 
 /**
  * Tests the Redis queue functions.
  *
  * @group redis
  */
-class QueueTest extends CoreQueueTest {
+class RedisQueueTest extends CoreQueueTest {
 
   /**
    * Modules to enable.
@@ -23,6 +24,7 @@ class QueueTest extends CoreQueueTest {
    * Tests Redis non-blocking queue.
    */
   public function testRedisNonBlockingQueue() {
+    self::setUpSettings();
     $client_factory = \Drupal::service('redis.factory');
     $settings = ['reserve_timeout' => NULL];
     $class_name = $client_factory->getClass(ClientFactory::REDIS_IMPL_QUEUE);
@@ -56,6 +58,7 @@ class QueueTest extends CoreQueueTest {
    * Tests Redis blocking queue.
    */
   public function testRedisBlockingQueue() {
+    self::setUpSettings();
     // Create two queues.
     $client_factory = \Drupal::service('redis.factory');
     $settings = ['reserve_timeout' => 30];
@@ -85,5 +88,17 @@ class QueueTest extends CoreQueueTest {
    * We override tests from core class we extend to prevent them from running.
    */
   public function testMemoryQueue() {}
+
+  /**
+   * Uses an env variable to set the redis client to use for this test.
+   */
+  protected function setUpSettings() {
+
+    // Write redis_interface settings manually.
+    $redis_interface = getenv('REDIS_INTERFACE');
+    $settings = Settings::getAll();
+    $settings['redis.connection']['interface'] = $redis_interface;
+    new Settings($settings);
+  }
 }
 

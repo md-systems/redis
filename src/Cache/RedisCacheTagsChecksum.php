@@ -31,15 +31,21 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
   protected $invalidatedTags = array();
 
   /**
-   * @var \Redis
+   * {@inheritdoc}
    */
   protected $client;
+
+  /**
+   * @var string
+   */
+  protected $clientType;
 
   /**
    * Creates a PHpRedis cache backend.
    */
   public function __construct(ClientFactory $factory) {
     $this->client = $factory->getClient();
+    $this->clientType = $factory->getClientName();
   }
 
   /**
@@ -57,12 +63,25 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
       $keys_to_increment[] = $this->getTagKey($tag);
     }
     if ($keys_to_increment) {
-      $multi = $this->client->multi(\Redis::PIPELINE);
-      foreach ($keys_to_increment as $key) {
-        $multi->incr($key);
+
+      // We want to differentiate between PhpRedis and Redis clients.
+      if ($this->clientType === 'PhpRedis') {
+        $multi = $this->client->multi(\Redis::PIPELINE);
+        foreach ($keys_to_increment as $key) {
+          $multi->incr($key);
+        }
+        $multi->exec();
       }
-      $multi->exec();
+      elseif ($this->clientType === 'Predis') {
+
+        $pipe = $this->client->pipeline();
+        foreach ($keys_to_increment as $key) {
+          $pipe->incr($key);
+        }
+        $pipe->execute();
+      }
     }
+
   }
 
   /**

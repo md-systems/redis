@@ -4,13 +4,16 @@ namespace Drupal\Tests\redis\Kernel;
 
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\redis\Flood\PhpRedis;
+use Drupal\Tests\redis\Traits\RedisTestInterfaceTrait;
 
 /**
- * Tests PhpRedis flood backend.
+ * Tests Redis flood backend.
  *
  * @group redis
  */
-class PhpRedisFloodTest extends KernelTestBase {
+class RedisFloodTest extends KernelTestBase {
+
+  use RedisTestInterfaceTrait;
 
   /**
    * Modules to enable.
@@ -23,6 +26,7 @@ class PhpRedisFloodTest extends KernelTestBase {
    * Test flood control.
    */
   public function testFlood() {
+    self::setUpSettings();
     $threshold = 2;
     $window = 1;
     $name = 'flood_test_cleanup';

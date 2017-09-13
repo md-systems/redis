@@ -7,6 +7,7 @@ use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Site\Settings;
 use Drupal\field_ui\Tests\FieldUiTestTrait;
 use Drupal\Tests\BrowserTestBase;
+use Drupal\Tests\redis\Traits\RedisTestInterfaceTrait;
 
 /**
  * Tests complex processes like installing modules with redis backends.
@@ -16,6 +17,7 @@ use Drupal\Tests\BrowserTestBase;
 class WebTest extends BrowserTestBase {
 
   use FieldUiTestTrait;
+  use RedisTestInterfaceTrait;
 
   /**
    * Modules to enable.
@@ -37,7 +39,7 @@ class WebTest extends BrowserTestBase {
     $settings = Settings::getAll();
 
     // Get REDIS_INTERFACE env variable.
-    $redis_interface = getenv('REDIS_INTERFACE');
+    $redis_interface = self::getRedisInterfaceEnv();
     $settings['redis.connection']['interface'] = $redis_interface;
 
     $settings['cache'] = [

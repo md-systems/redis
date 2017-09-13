@@ -5,7 +5,7 @@ namespace Drupal\Tests\redis\Kernel;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\KernelTests\Core\Cache\GenericCacheBackendUnitTestBase;
 use Symfony\Component\DependencyInjection\Reference;
-use Drupal\Core\Site\Settings;
+use Drupal\Tests\redis\Traits\RedisTestInterfaceTrait;
 
 /**
  * Tests Redis cache backend using GenericCacheBackendUnitTestBase.
@@ -13,6 +13,8 @@ use Drupal\Core\Site\Settings;
  * @group redis
  */
 class RedisCacheTest extends GenericCacheBackendUnitTestBase {
+
+  use RedisTestInterfaceTrait;
 
   /**
    * Modules to enable.
@@ -42,18 +44,6 @@ class RedisCacheTest extends GenericCacheBackendUnitTestBase {
     $cache = \Drupal::service('cache.backend.redis')->get($bin);
     $cache->setMinTtl(10);
     return $cache;
-  }
-
-  /**
-   * Uses an env variable to set the redis client to use for this test.
-   */
-  protected function setUpSettings() {
-
-    // Write redis_interface settings manually.
-    $redis_interface = getenv('REDIS_INTERFACE');
-    $settings = Settings::getAll();
-    $settings['redis.connection']['interface'] = $redis_interface;
-    new Settings($settings);
   }
 
 }

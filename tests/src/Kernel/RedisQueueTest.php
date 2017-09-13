@@ -4,7 +4,7 @@ namespace Drupal\Tests\redis\Kernel;
 
 use Drupal\redis\ClientFactory;
 use \Drupal\KernelTests\Core\Queue\QueueTest as CoreQueueTest;
-use Drupal\Core\Site\Settings;
+use Drupal\Tests\redis\Traits\RedisTestInterfaceTrait;
 
 /**
  * Tests the Redis queue functions.
@@ -12,6 +12,8 @@ use Drupal\Core\Site\Settings;
  * @group redis
  */
 class RedisQueueTest extends CoreQueueTest {
+
+  use RedisTestInterfaceTrait;
 
   /**
    * Modules to enable.
@@ -89,16 +91,5 @@ class RedisQueueTest extends CoreQueueTest {
    */
   public function testMemoryQueue() {}
 
-  /**
-   * Uses an env variable to set the redis client to use for this test.
-   */
-  protected function setUpSettings() {
-
-    // Write redis_interface settings manually.
-    $redis_interface = getenv('REDIS_INTERFACE');
-    $settings = Settings::getAll();
-    $settings['redis.connection']['interface'] = $redis_interface;
-    new Settings($settings);
-  }
 }
 

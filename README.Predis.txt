@@ -8,9 +8,8 @@ Get Predis
 
 Predis can be installed to the vendor directory using composer like so:
 
-composer require drupal/redis
+composer require nrk/predis
 
-The library is listed as a dependency of this module and should be installed automatically.
 
 Configuration of module for use with Predis
 ----------------------------
@@ -36,9 +35,3 @@ $settings['redis.connection']['replication.host'][3]['host'] = '1.2.3.6';
 $settings['redis.connection']['replication.host'][3]['port'] = '6379';
 $settings['redis.connection']['replication.host'][3]['role'] = 'replica';
 $settings['cache']['default'] = 'cache.backend.redis';
-
-Always set the fast backend for bootstrap, discover and config, otherwise
-this gets lost when redis is enabled.
-$settings['cache']['bins']['bootstrap'] = 'cache.backend.chainedfast';
-$settings['cache']['bins']['discovery'] = 'cache.backend.chainedfast';
-$settings['cache']['bins']['config'] = 'cache.backend.chainedfast';

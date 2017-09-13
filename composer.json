@@ -1,13 +1,13 @@
 {
   "name": "drupal/redis",
   "type": "drupal-module",
-  "require": {
+  "suggest": {
     "predis/predis": "^1.1.1"
   },
   "license": "GPL-2.0",
   "autoload": {
     "psr-4": {
-      "Drupal\\redis\\": "src"
+      "Drupal\\redis\\": "src",
     }
   }
 }

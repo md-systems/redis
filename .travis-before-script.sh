@@ -17,4 +17,4 @@ cd "$DRUPAL_TI_MODULES_PATH"
 echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
 
 # Download predis
-composer global require predis/predis
+composer require predis/predis

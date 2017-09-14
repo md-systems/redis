@@ -100,7 +100,7 @@ class ClientFactory {
   {
     if (!isset(self::$_clientInterface))
     {
-      $settings = Settings::get('redis.connection', [];
+      $settings = Settings::get('redis.connection', []);
       if (!empty($settings['interface']))
       {
         $className = self::getClass(self::REDIS_IMPL_CLIENT, $settings['interface']);
@@ -144,7 +144,7 @@ class ClientFactory {
    */
   public static function getClient() {
     if (!isset(self::$_client)) {
-      $settings = Settings::get('redis.connection', [];
+      $settings = Settings::get('redis.connection', []);
       $settings += [
         'host' => self::REDIS_DEFAULT_HOST,
         'port' => self::REDIS_DEFAULT_PORT,

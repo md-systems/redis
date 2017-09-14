@@ -14,8 +14,9 @@ will need to compile the extension yourself.
 Predis
 ------
 
-Support for the Predis PHP library has not yet been ported to Drupal 8.
-
+Support for the Predis PHP library is experimental, but feel free to try it out. 
+You can install the required library using composer. Check out the README.Predis.txt file 
+for more information.
 
 Important notice
 ----------------
@@ -35,6 +36,21 @@ This method will allow Drupal to use Redis for all caches.
 
     $settings['redis.connection']['interface'] = 'PhpRedis'; // Can be "Predis".
     $settings['redis.connection']['host']      = '1.2.3.4';  // Your Redis instance hostname.
+    $settings['cache']['default'] = 'cache.backend.redis';
+
+To use some Predis goodness, including a redis primary/replica setup you can use a config like this.
+
+    $settings['redis.connection']['interface'] = 'Predis'; // Use predis library.
+    $settings['redis.connection']['replication'] = TRUE; // Turns on replication.
+    $settings['redis.connection']['replication.host'][1]['host'] = '1.2.3.4';  // Your Redis instance hostname.
+    $settings['redis.connection']['replication.host'][1]['port'] = '6379'; // Only required if using non-standard port.
+    $settings['redis.connection']['replication.host'][1]['role'] = 'primary'; // The redis instance role.
+    $settings['redis.connection']['replication.host'][2]['host'] = '1.2.3.5';
+    $settings['redis.connection']['replication.host'][2]['port'] = '6379';
+    $settings['redis.connection']['replication.host'][2]['role'] = 'replica';
+    $settings['redis.connection']['replication.host'][3]['host'] = '1.2.3.6';
+    $settings['redis.connection']['replication.host'][3]['port'] = '6379';
+    $settings['redis.connection']['replication.host'][3]['role'] = 'replica';
     $settings['cache']['default'] = 'cache.backend.redis';
 
 Either include the default example.services.yml from the module, which will

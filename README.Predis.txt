@@ -1,57 +1,37 @@
 Predis cache backend
 ====================
 
-This client, for now, is only able to use the Predis PHP library.
-
-The Predis library requires PHP 5.3 minimum. If your hosted environment does
-not ships with at least PHP 5.3, please do not use this cache backend.
-
-Please consider using an OPCode cache such as APC. Predis is a good and fully
-featured API, the cost is that the code is a lot more than a single file in
-opposition to some other backends such as the APC one.
+Using Predis for the Drupal 8 version of this module is still experimental.
 
 Get Predis
 ----------
 
-You can download this library at:
+Predis can be installed to the vendor directory using composer like so:
 
-  https://github.com/nrk/predis
+composer require nrk/predis
 
-This file explains how to install the Predis library and the Drupal cache
-backend. If you are an advanced Drupal integrator, please consider the fact
-that you can easily change all the pathes. Pathes used in this file are
-likely to be default for non advanced users.
 
-Download and install library
+Configuration of module for use with Predis
 ----------------------------
 
-Once done, you either have to clone it into:
+There is not much different to configure about Predis.
+Adding this to settings.php should suffice for basic usage:
 
-  sites/all/libraries/predis
+$settings['redis.connection']['interface'] = 'Predis';
+$settings['redis.connection']['host']      = '1.2.3.4';  // Your Redis instance hostname.
+$settings['cache']['default'] = 'cache.backend.redis';
 
-So that you have the following directory tree:
+To add more magic with a primary/replica setup you can use a config like this:
 
-  sites/all/libraries/lib/Predis # Where the PHP code stands
-
-Or, any other place in order to share it:
-For example, into your libraries folder, in order to get:
-
-  some/dir/predis/lib
-
-If you choose this solution, you have to alter a bit your $conf array into
-the settings.php file as this:
-
-  define('PREDIS_BASE_PATH', DRUPAL_ROOT . '/some/dir/predis/lib/');
-
-Connect to a remote host and database
--------------------------------------
-
-See README.txt file.
-
-Advanced configuration (PHP expert)
------------------------------------
-
-Best solution is, whatever is the place where you put the Predis library, that
-you set up a fully working autoloader able to use it. The one being used by the
-Redis module is a default fallback and will naturally being appened to the SPL
-autoloader stack.
+$settings['redis.connection']['interface'] = 'Predis'; // Use predis library.
+$settings['redis.connection']['replication'] = TRUE; // Turns on replication.
+$settings['redis.connection']['replication.host'][1]['host'] = '1.2.3.4';  // Your Redis instance hostname.
+$settings['redis.connection']['replication.host'][1]['port'] = '6379'; // Only required if using non-standard port.
+$settings['redis.connection']['replication.host'][1]['role'] = 'primary'; // The redis instance role.
+$settings['redis.connection']['replication.host'][2]['host'] = '1.2.3.5';
+$settings['redis.connection']['replication.host'][2]['port'] = '6379';
+$settings['redis.connection']['replication.host'][2]['role'] = 'replica';
+$settings['redis.connection']['replication.host'][3]['host'] = '1.2.3.6';
+$settings['redis.connection']['replication.host'][3]['port'] = '6379';
+$settings['redis.connection']['replication.host'][3]['role'] = 'replica';
+$settings['cache']['default'] = 'cache.backend.redis';

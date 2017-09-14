@@ -41,10 +41,10 @@ class PhpRedis extends CacheBase {
       return [];
     }
 
-    $return = array();
+    $return = [];
 
     // Build the list of keys to fetch.
-    $keys = array_map(array($this, 'getKey'), $cids);
+    $keys = array_map([$this, 'getKey'], $cids);
 
     // Optimize for the common case when only a single cache entry needs to
     // be fetched, no pipeline is needed then.
@@ -80,7 +80,7 @@ class PhpRedis extends CacheBase {
   /**
    * {@inheritdoc}
    */
-  public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = array()) {
+  public function set($cid, $data, $expire = Cache::PERMANENT, array $tags = []) {
 
     $ttl = $this->getExpiration($expire);
 
@@ -103,7 +103,7 @@ class PhpRedis extends CacheBase {
    * {@inheritdoc}
    */
   public function deleteMultiple(array $cids) {
-    $keys = array_map(array($this, 'getKey'), $cids);
+    $keys = array_map([$this, 'getKey'], $cids);
     $this->client->del($keys);
   }
 

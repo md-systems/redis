@@ -25,7 +25,7 @@ class PhpRedis extends LockBackendAbstract {
     $this->client = $factory->getClient();
     // __destruct() is causing problems with garbage collections, register a
     // shutdown function instead.
-    drupal_register_shutdown_function(array($this, 'releaseAll'));
+    drupal_register_shutdown_function([$this, 'releaseAll']);
   }
 
   /**

@@ -21,7 +21,7 @@ class RedisCacheTest extends GenericCacheBackendUnitTestBase {
    *
    * @var array
    */
-  public static $modules = array('system', 'redis');
+  public static $modules = ['system', 'redis'];
 
   public function register(ContainerBuilder $container) {
     self::setUpSettings();

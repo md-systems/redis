@@ -26,7 +26,7 @@ This mode needs the following settings:
 
 Modify the host as follow:
     // Sentinels instances list with hostname:port format.
-    $settings['redis.connection']['host']      = array('1.2.3.4:5000','1.2.3.5:5000','1.2.3.6:5000');
+    $settings['redis.connection']['host']      = ['1.2.3.4:5000','1.2.3.5:5000','1.2.3.6:5000'];
 
 Add the new instance setting:
 

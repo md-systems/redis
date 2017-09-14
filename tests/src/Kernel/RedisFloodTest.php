@@ -20,7 +20,7 @@ class RedisFloodTest extends KernelTestBase {
    *
    * @var array
    */
-  public static $modules = array( 'redis');
+  public static $modules = ['redis'];
 
   /**
    * Test flood control.

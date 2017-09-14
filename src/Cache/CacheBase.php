@@ -122,7 +122,7 @@ abstract class CacheBase implements CacheBackendInterface {
    * {@inheritdoc}
    */
   public function get($cid, $allow_invalid = FALSE) {
-    $cids = array($cid);
+    $cids = [$cid];
     $cache = $this->getMultiple($cids, $allow_invalid);
     return reset($cache);
   }
@@ -132,7 +132,7 @@ abstract class CacheBase implements CacheBackendInterface {
    */
   public function setMultiple(array $items) {
     foreach ($items as $cid => $item) {
-      $this->set($cid, $item['data'], isset($item['expire']) ? $item['expire'] : CacheBackendInterface::CACHE_PERMANENT, isset($item['tags']) ? $item['tags'] : array());
+      $this->set($cid, $item['data'], isset($item['expire']) ? $item['expire'] : CacheBackendInterface::CACHE_PERMANENT, isset($item['tags']) ? $item['tags'] : [];
     }
   }
 
@@ -298,14 +298,14 @@ abstract class CacheBase implements CacheBackendInterface {
     // invalidateAll().
     $tags[] = $this->getTagForBin();
     assert('\Drupal\Component\Assertion\Inspector::assertAllStrings($tags)', 'Cache Tags must be strings.');
-    $hash = array(
+    $hash = [
       'cid' => $cid,
       'created' => round(microtime(TRUE), 3),
       'expire' => $expire,
       'tags' => implode(' ', $tags),
       'valid' => 1,
       'checksum' => $this->checksumProvider->getCurrentChecksum($tags),
-    );
+    ];
 
     // Let Redis handle the data types itself.
     if (!is_string($data)) {

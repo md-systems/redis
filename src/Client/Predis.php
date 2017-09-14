@@ -45,7 +45,7 @@ class Predis implements ClientInterface {
         }
       }
 
-      $options = array('replication' => true);
+      $options = ['replication' => true];
       $client = new Client($parameters, $options);
     }
     else {

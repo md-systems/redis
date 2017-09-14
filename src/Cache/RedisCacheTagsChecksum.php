@@ -19,7 +19,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    *
    * @var array
    */
-  protected $tagCache = array();
+  protected $tagCache = [];
 
   /**
    * A list of tags that have already been invalidated in this request.
@@ -28,7 +28,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    *
    * @var array
    */
-  protected $invalidatedTags = array();
+  protected $invalidatedTags = [];
 
   /**
    * {@inheritdoc}
@@ -113,7 +113,7 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
 
     $fetch = array_values(array_diff($tags, array_keys($this->tagCache)));
     if ($fetch) {
-      $keys = array_map(array($this, 'getTagKey'), $fetch);
+      $keys = array_map([$this, 'getTagKey'], $fetch);
       foreach ($this->client->mget($keys) as $index => $invalidations) {
         $this->tagCache[$fetch[$index]] = $invalidations ?: 0;
       }
@@ -130,8 +130,8 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    * {@inheritdoc}
    */
   public function reset() {
-    $this->tagCache = array();
-    $this->invalidatedTags = array();
+    $this->tagCache = [];
+    $this->invalidatedTags = [];
   }
 
   /**

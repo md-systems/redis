@@ -3,6 +3,7 @@
 namespace Drupal\Tests\redis\Functional\Lock;
 
 use Drupal\Component\Utility\OpCodeCache;
+use Drupal\Core\Database\Database;
 use Drupal\Core\Site\Settings;
 use Drupal\Tests\system\Functional\Lock\LockFunctionalTest;
 use Drupal\Tests\redis\Traits\RedisTestInterfaceTrait;
@@ -46,8 +47,10 @@ class RedisLockFunctionalTest extends LockFunctionalTest {
 
     $this->rebuildContainer();
 
+    // Get database schema.
+    $db_schema = Database::getConnection()->schema();
     // Make sure that the semaphore table isn't used.
-    db_drop_table('semaphore');
+    $db_schema->dropTable('semaphore');
   }
 
 }

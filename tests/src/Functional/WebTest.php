@@ -4,6 +4,7 @@ namespace Drupal\Tests\redis\Functional;
 
 use Drupal\Component\Utility\OpCodeCache;
 use Drupal\Component\Utility\Unicode;
+use Drupal\Core\Database\Database;
 use Drupal\Core\Site\Settings;
 use Drupal\field_ui\Tests\FieldUiTestTrait;
 use Drupal\Tests\BrowserTestBase;
@@ -97,14 +98,17 @@ class WebTest extends BrowserTestBase {
     $this->container->set('cache.factory', NULL);
     $this->rebuildContainer();
 
+    // Get database schema.
+    $db_schema = Database::getConnection()->schema();
+
     // Make sure that the cache and lock tables aren't used.
-    db_drop_table('cache_default');
-    db_drop_table('cache_render');
-    db_drop_table('cache_config');
-    db_drop_table('cache_container');
-    db_drop_table('cachetags');
-    db_drop_table('semaphore');
-    db_drop_table('flood');
+    $db_schema->dropTable('cache_default');
+    $db_schema->dropTable('cache_render');
+    $db_schema->dropTable('cache_config');
+    $db_schema->dropTable('cache_container');
+    $db_schema->dropTable('cachetags');
+    $db_schema->dropTable('semaphore');
+    $db_schema->dropTable('flood');
   }
 
   /**
@@ -155,33 +159,35 @@ class WebTest extends BrowserTestBase {
     // Test the output as anonymous user.
     $this->drupalLogout();
     $this->drupalGet('node');
-    $this->assertText($edit['title[0][value]']);
+    $this->assertSession()->responseContains($edit['title[0][value]']);
 
     $this->drupalLogin($admin_user);
     $this->drupalGet('node');
     $this->clickLink($edit['title[0][value]']);
-    $this->assertText($edit['body[0][value]']);
+    $this->assertSession()->responseContains($edit['body[0][value]']);
     $this->clickLink(t('Edit'));
     $update = [
       'title[0][value]' => $this->randomMachineName(),
     ];
     $this->drupalPostForm(NULL, $update, t('Save and keep published'));
-    $this->assertText($update['title[0][value]']);
+    $this->assertSession()->responseContains($update['title[0][value]']);
     $this->drupalGet('node');
-    $this->assertText($update['title[0][value]']);
+    $this->assertSession()->responseContains($update['title[0][value]']);
 
     $this->drupalLogout();
     $this->drupalGet('node');
     $this->clickLink($update['title[0][value]']);
-    $this->assertText($edit['body[0][value]']);
+    $this->assertSession()->responseContains($edit['body[0][value]']);
 
-    $this->assertFalse(db_table_exists('cache_default'));
-    $this->assertFalse(db_table_exists('cache_render'));
-    $this->assertFalse(db_table_exists('cache_config'));
-    $this->assertFalse(db_table_exists('cache_container'));
-    $this->assertFalse(db_table_exists('cachetags'));
-    $this->assertFalse(db_table_exists('semaphore'));
-    $this->assertFalse(db_table_exists('flood'));
+    // Get database schema.
+    $db_schema = Database::getConnection()->schema();
+    $this->assertFalse($db_schema->tableExists('cache_default'));
+    $this->assertFalse($db_schema->tableExists('cache_render'));
+    $this->assertFalse($db_schema->tableExists('cache_config'));
+    $this->assertFalse($db_schema->tableExists('cache_container'));
+    $this->assertFalse($db_schema->tableExists('cachetags'));
+    $this->assertFalse($db_schema->tableExists('semaphore'));
+    $this->assertFalse($db_schema->tableExists('flood'));
   }
 
 }

@@ -46,7 +46,7 @@ server configuration.
 Connect to a remote host and database
 -------------------------------------
 
-See README.txt file.
+See README.md file.
 
 For this particular implementation, host settings are overridden by the
 UNIX socket parameter.

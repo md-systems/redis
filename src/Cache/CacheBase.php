@@ -61,7 +61,7 @@ abstract class CacheBase implements CacheBackendInterface {
   /**
    * Default TTL for CACHE_PERMANENT items.
    *
-   * See "Default lifetime for permanent items" section of README.txt
+   * See "Default lifetime for permanent items" section of README.md
    * file for a comprehensive explaination of why this exists.
    *
    * @var int

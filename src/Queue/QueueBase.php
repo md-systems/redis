@@ -2,12 +2,14 @@
 
 namespace Drupal\redis\Queue;
 
+use Drupal\Core\Queue\QueueInterface;
+
 /**
  * Redis queue implementation.
  *
  * @ingroup queue
  */
-abstract class QueueBase {
+abstract class QueueBase implements QueueInterface {
 
   /**
    * Prefix used with all keys.

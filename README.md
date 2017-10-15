@@ -152,6 +152,15 @@ use one in particular, just add to your settings.php file:
 
     $settings['redis.connection']['base']      = 12;
 
+Use Redis without Redis module Enabled
+-------------------------------------------  
+If you need to use Redis without have the module enabled, you can just autoload the module classes. 
+To do that, just add the following code to your settings.php file (Replace [redis_folder] with your module folder usually /modules/contrib/redis):
+
+    $class_loader->addPsr4('Drupal\redis', DRUPAL_ROOT . '/[redis_folder]/src');
+
+This configuration is also necessary to install drupal with Redis set as default cache in your settings file.
+
 Connection to a password protected instance
 -------------------------------------------
 

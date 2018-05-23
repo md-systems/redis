@@ -3,6 +3,7 @@
 namespace Drupal\redis\Cache;
 
 use \DateInterval;
+use Drupal\Component\Assertion\Inspector;
 use Drupal\Component\Serialization\SerializationInterface;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Cache\CacheBackendInterface;
@@ -297,7 +298,7 @@ abstract class CacheBase implements CacheBackendInterface {
     // Always add a cache tag for the current bin, so that we can use that for
     // invalidateAll().
     $tags[] = $this->getTagForBin();
-    assert('\Drupal\Component\Assertion\Inspector::assertAllStrings($tags)', 'Cache Tags must be strings.');
+    assert(Inspector::assertAllStrings($tags), 'Cache Tags must be strings.');
     $hash = [
       'cid' => $cid,
       'created' => round(microtime(TRUE), 3),

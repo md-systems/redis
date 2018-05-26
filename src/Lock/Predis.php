@@ -84,8 +84,8 @@ class Predis extends LockBackendAbstract {
       // succeed if the key does not exist yet.
       $result = $this->client->set($key, $id, 'nx', 'px', (int) ($timeout * 1000));
 
-      // If the result is FALSE, we failed to acquire the lock.
-      if (FALSE === $result) {
+      // If the result is FALSE or NULL, we failed to acquire the lock.
+      if (FALSE === $result || NULL === $result) {
         return FALSE;
       }
 

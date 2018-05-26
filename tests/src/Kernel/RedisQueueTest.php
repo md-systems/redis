@@ -39,7 +39,7 @@ class RedisQueueTest extends CoreQueueTest {
     $queue2 = new $class_name($this->randomMachineName(), $settings, $client_factory->getClient());
     $queue2->createQueue();
 
-    $this->queueTest($queue1, $queue2);
+    $this->runQueueTest($queue1, $queue2);
     $queue1->deleteQueue();
     $queue2->deleteQueue();
 
@@ -53,7 +53,7 @@ class RedisQueueTest extends CoreQueueTest {
     $queue2 = new $class_name($this->randomMachineName(), $settings, $client_factory->getClient());
     $queue2->createQueue();
 
-    $this->queueTest($queue1, $queue2);
+    $this->runQueueTest($queue1, $queue2);
   }
 
   /**
@@ -74,7 +74,7 @@ class RedisQueueTest extends CoreQueueTest {
     $queue2 = new $class_name($this->randomMachineName(), $settings, $client_factory->getClient());
     $queue2->createQueue();
 
-    $this->queueTest($queue1, $queue2);
+    $this->runQueueTest($queue1, $queue2);
   }
 
   /**

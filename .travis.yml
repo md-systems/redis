@@ -85,7 +85,7 @@ env:
     #- DRUPAL_TI_RUNNERS="simpletest"
     #- DRUPAL_TI_RUNNERS="behat"
     - DRUPAL_TI_RUNNERS="phpunit-core"
-  env:
+  matrix:
     - REDIS_INTERFACE=PhpRedis
     - REDIS_INTERFACE=Predis
 

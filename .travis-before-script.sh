@@ -10,7 +10,7 @@ drupal_ti_ensure_drupal
 cd "$DRUPAL_TI_DRUPAL_DIR"
 
 # Download predis
-composer require predis/predis
+# composer require predis/predis
 
 
 # These variables come from environments/drupal-*.sh

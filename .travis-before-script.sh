@@ -18,4 +18,4 @@ mkdir -p "$DRUPAL_TI_MODULES_PATH"
 cd "$DRUPAL_TI_MODULES_PATH"
 
 #Enable php-redis
-echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+#echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini

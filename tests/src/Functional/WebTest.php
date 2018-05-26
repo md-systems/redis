@@ -3,7 +3,6 @@
 namespace Drupal\Tests\redis\Functional;
 
 use Drupal\Component\Utility\OpCodeCache;
-use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Site\Settings;
 use Drupal\field_ui\Tests\FieldUiTestTrait;
@@ -142,10 +141,10 @@ class WebTest extends BrowserTestBase {
     // Create a node type with a field.
     $edit = [
       'name' => $this->randomString(),
-      'type' => $node_type = Unicode::strtolower($this->randomMachineName()),
+      'type' => $node_type = mb_strtolower($this->randomMachineName()),
     ];
     $this->drupalPostForm('admin/structure/types/add', $edit, t('Save and manage fields'));
-    $field_name = Unicode::strtolower($this->randomMachineName());
+    $field_name = mb_strtolower($this->randomMachineName());
     $this->fieldUIAddNewField('admin/structure/types/manage/' . $node_type, $field_name, NULL, 'text');
 
     // Create a node, check display, edit, verify that it has been updated.
@@ -154,7 +153,7 @@ class WebTest extends BrowserTestBase {
       'body[0][value]' => $this->randomMachineName(),
       'field_' . $field_name . '[0][value]' => $this->randomMachineName(),
     ];
-    $this->drupalPostForm('node/add/' . $node_type, $edit, t('Save and publish'));
+    $this->drupalPostForm('node/add/' . $node_type, $edit, t('Save'));
 
     // Test the output as anonymous user.
     $this->drupalLogout();
@@ -169,7 +168,7 @@ class WebTest extends BrowserTestBase {
     $update = [
       'title[0][value]' => $this->randomMachineName(),
     ];
-    $this->drupalPostForm(NULL, $update, t('Save and keep published'));
+    $this->drupalPostForm(NULL, $update, t('Save'));
     $this->assertSession()->responseContains($update['title[0][value]']);
     $this->drupalGet('node');
     $this->assertSession()->responseContains($update['title[0][value]']);

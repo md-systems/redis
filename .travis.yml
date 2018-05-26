@@ -12,12 +12,9 @@ php:
   - 5.5
   - 5.6
   - 7
-  - hhvm
 
 matrix:
   fast_finish: true
-  allow_failures:
-    - php: hhvm
 
 env:
   global:
@@ -63,7 +60,7 @@ env:
     - DRUPAL_TI_BEHAT_BROWSER="firefox"
 
     # Use Drupal 8.3.x to run tests.
-    - DRUPAL_TI_CORE_BRANCH="8.3.x"
+    - DRUPAL_TI_CORE_BRANCH="8.5.x"
 
     # PHPUnit specific commandline arguments.
     - DRUPAL_TI_PHPUNIT_ARGS="--verbose --debug"

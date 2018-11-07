@@ -104,10 +104,7 @@ class PhpRedis extends LockBackendAbstract {
     $key    = $this->getKey($name);
     $value = $this->client->get($key);
 
-    // In Drupal 7, this method treated the lock as available if the ID did
-    // match. The database backend and test expects it to return FALSE in that
-    // case, updated accordingly.
-    return FALSE === $value;
+    return $value === FALSE || $value === NULL;
   }
 
   /**

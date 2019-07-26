@@ -88,7 +88,7 @@ class ClientFactory {
   }
 
   /**
-   * Lazy instanciate client proxy depending on the actual configuration.
+   * Lazy instantiates client proxy depending on the actual configuration.
    *
    * If you are using a lock or cache backend using one of the Redis client
    * implementations, this will be overridden at early bootstrap phase and
@@ -108,7 +108,7 @@ class ClientFactory {
       }
       elseif (class_exists('Predis\Client'))
       {
-        // Transparent and abitrary preference for Predis library.
+        // Transparent and arbitrary preference for Predis library.
         $className = self::getClass(self::REDIS_IMPL_CLIENT, 'Predis');
         self::$_clientInterface = new $className();
       }
@@ -131,7 +131,7 @@ class ClientFactory {
   }
 
   /**
-   * Get underlaying library name.
+   * Get underlying library name.
    *
    * @return string
    */

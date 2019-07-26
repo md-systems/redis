@@ -8,7 +8,7 @@ Get Predis
 
 Predis can be installed to the vendor directory using composer like so:
 
-composer require nrk/predis
+composer require predis/predis
 
 
 Configuration of module for use with Predis

@@ -60,7 +60,6 @@ class Predis extends QueueBase {
    *   Next serial ID for Redis queue item.
    */
   protected function incrementId() {
-    // TODO: Fixme
     return $this->client->incr($this->incrementCounterKey);
   }
 
@@ -68,8 +67,7 @@ class Predis extends QueueBase {
    * {@inheritdoc}
    */
   public function numberOfItems() {
-    // TODO: Fixme
-    return $this->client->lLen($this->availableListKey);
+    return $this->client->lLen($this->availableListKey) + $this->client->lLen($this->claimedListKey);
   }
 
   /**

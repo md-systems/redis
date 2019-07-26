@@ -67,7 +67,7 @@ class ReliablePhpRedis extends ReliableQueueBase {
    * {@inheritdoc}
    */
   public function numberOfItems() {
-    return $this->client->lLen($this->availableListKey);
+    return $this->client->lLen($this->availableListKey) + $this->client->lLen($this->claimedListKey);
   }
 
   /**

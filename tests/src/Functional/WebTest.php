@@ -5,8 +5,8 @@ namespace Drupal\Tests\redis\Functional;
 use Drupal\Component\Utility\OpCodeCache;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Site\Settings;
-use Drupal\field_ui\Tests\FieldUiTestTrait;
 use Drupal\Tests\BrowserTestBase;
+use Drupal\Tests\field_ui\Traits\FieldUiTestTrait;
 use Drupal\Tests\redis\Traits\RedisTestInterfaceTrait;
 
 /**

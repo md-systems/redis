@@ -68,7 +68,7 @@ class PhpRedis extends QueueBase {
    * {@inheritdoc}
    */
   public function numberOfItems() {
-    return $this->client->lLen($this->availableListKey);
+    return $this->client->lLen($this->availableListKey) + $this->client->lLen($this->claimedListKey);
   }
 
   /**

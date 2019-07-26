@@ -82,14 +82,18 @@ class RedisQueueTest extends CoreQueueTest {
    *
    * We override tests from core class we extend to prevent them from running.
    */
-  public function testSystemQueue() {}
+  public function testSystemQueue() {
+    $this->markTestSkipped();
+  }
 
   /**
    * Overrides \Drupal\system\Tests\Queue\QueueTestQueueTest::testMemoryQueue().
    *
    * We override tests from core class we extend to prevent them from running.
    */
-  public function testMemoryQueue() {}
+  public function testMemoryQueue() {
+    $this->markTestSkipped();
+  }
 
 }
 

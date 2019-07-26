@@ -93,7 +93,7 @@ class PhpRedis extends CacheBase {
 
     // Build the cache item and save it as a hash array.
     $entry = $this->createEntryHash($cid, $data, $expire, $tags);
-    $pipe = $this->client->multi(\REdis::PIPELINE);
+    $pipe = $this->client->multi(\Redis::PIPELINE);
     $pipe->hMset($key, $entry);
     $pipe->expire($key, $ttl);
     $pipe->exec();

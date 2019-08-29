@@ -141,6 +141,13 @@ If your Redis instance is remote, you can use this syntax:
 
 Port is optional, default is 6379 (default Redis port).
 
+Use persistent connections
+--------------------------
+
+This mode needs the following setting:
+
+    $settings['redis.connection']['persistent'] = TRUE;
+
 Using a specific database
 -------------------------
 

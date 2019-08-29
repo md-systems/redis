@@ -12,7 +12,7 @@ interface ClientInterface {
    * @return mixed
    *   Real client depends from the library behind.
    */
-  public function getClient($host = NULL, $port = NULL, $base = NULL);
+  public function getClient($host = NULL, $port = NULL, $base = NULL, $password = NULL, $persistent = FALSE);
 
   /**
    * Get underlaying library name used.

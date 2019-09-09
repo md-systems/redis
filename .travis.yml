@@ -99,6 +99,7 @@ mysql:
 
 services:
   - redis-server
+  - mysql
 
 before_install:
   - composer global require "lionsad/drupal_ti:dev-master"

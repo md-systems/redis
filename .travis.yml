@@ -9,9 +9,9 @@
 language: php
 
 php:
-  - 5.5
-  - 5.6
-  - 7
+  - 7.1
+  - 7.2
+  - 7.3
 
 matrix:
   fast_finish: true
@@ -99,7 +99,7 @@ services:
   - redis-server
 
 before_install:
-  - composer global require "lionsad/drupal_ti:dev-master#396d11d200005eb68491d24170da0a98ae7f51b3"
+  - composer global require "lionsad/drupal_ti:dev-master"
   - drupal-ti before_install
 
 install:

@@ -102,8 +102,7 @@ class Predis extends QueueBase {
    * {@inheritdoc}
    */
   public function releaseItem($item) {
-    // TODO: Fixme
-    $this->client->lrem($this->claimedListKey, $item->qid, -1);
+    $this->client->lrem($this->claimedListKey, -1, $item->qid);
     $this->client->lpush($this->availableListKey, $item->qid);
   }
 
@@ -111,8 +110,8 @@ class Predis extends QueueBase {
    * {@inheritdoc}
    */
   public function deleteItem($item) {
-    // TODO: Fixme
-    $this->client->lrem($this->claimedListKey, $item->qid, -1);
+    $this->client->lrem($this->claimedListKey, -1, $item->qid);
+    $this->client->lrem($this->availableListKey, -1, $item->qid);
     $this->client->hdel($this->availableItems, $item->qid);
   }
 

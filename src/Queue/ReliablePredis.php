@@ -102,22 +102,21 @@ class ReliablePredis extends ReliableQueueBase {
    * {@inheritdoc}
    */
   public function releaseItem($item) {
-    // TODO: Fixme
     $this->client->pipeline()
-      ->lrem($this->claimedListKey, $item->qid, -1)
+      ->lrem($this->claimedListKey, -1, $item->qid)
       ->lpush($this->availableListKey, $item->qid)
-      ->exec();
+      ->execute();
   }
 
   /**
    * {@inheritdoc}
    */
   public function deleteItem($item) {
-    // TODO: Fixme
     $this->client->pipeline()
-      ->lrem($this->claimedListKey, $item->qid, -1)
+      ->lrem($this->claimedListKey, -1, $item->qid)
+      ->lrem($this->availableListKey, -1, $item->qid)
       ->hdel($this->availableItems, $item->qid)
-      ->exec();
+      ->execute();
   }
 
   /**
@@ -146,7 +145,7 @@ class ReliablePredis extends ReliableQueueBase {
     foreach ($this->client->lrange($this->claimedListKey, 0, -1) as $qid) {
       if (!$this->client->exists($this->leasedKeyPrefix . $qid)) {
         // The lease expired for this ID.
-        $this->client->lrem($this->claimedListKey, $qid, -1);
+        $this->client->lrem($this->claimedListKey, -1, $qid);
         $this->client->lpush($this->availableListKey, $qid);
       }
     }

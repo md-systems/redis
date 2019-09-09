@@ -64,9 +64,7 @@ class Predis extends LockBackendAbstract {
         return FALSE;
       }
 
-      $result = $this->client->pipeline()
-        ->psetex($key, (int) ($timeout * 1000), $id)
-        ->exec();
+      $result = $this->client->psetex($key, (int) ($timeout * 1000), $id);
 
       // If the set failed, someone else wrote the key, we failed to acquire
       // the lock.

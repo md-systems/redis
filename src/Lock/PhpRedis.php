@@ -123,7 +123,7 @@ class PhpRedis extends LockBackendAbstract {
 
     if ($this->client->get($key) == $id) {
       $this->client->multi();
-      $this->client->delete($key);
+      $this->client->del($key);
       $this->client->exec();
     }
     else {

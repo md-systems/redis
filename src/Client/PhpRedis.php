@@ -80,8 +80,17 @@ class PhpRedis implements ClientInterface {
     if ($settings['instance']) {
       foreach ($sentinels as $sentinel) {
         list($host, $port) = explode(':', $sentinel);
+        // Prevent fatal PHP errors when one of the sentinels is down.
+        set_error_handler(function () {
+          return TRUE;
+        });
         // 0.5s timeout.
-        $client->connect($host, $port, 0.5);
+        $success = $client->connect($host, $port, 0.5);
+        restore_error_handler();
+
+        if (!$success) {
+          continue;
+        }
 
         if (isset($password)) {
           $client->auth($password);

@@ -49,7 +49,7 @@ class PhpRedis extends CacheBase {
     // Optimize for the common case when only a single cache entry needs to
     // be fetched, no pipeline is needed then.
     if (count($keys) > 1) {
-      $pipe = $this->client->multi(\Redis::PIPELINE);
+      $pipe = $this->client->multi();
       foreach ($keys as $key) {
         $pipe->hgetall($key);
       }
@@ -93,7 +93,7 @@ class PhpRedis extends CacheBase {
 
     // Build the cache item and save it as a hash array.
     $entry = $this->createEntryHash($cid, $data, $expire, $tags);
-    $pipe = $this->client->multi(\Redis::PIPELINE);
+    $pipe = $this->client->multi();
     $pipe->hMset($key, $entry);
     $pipe->expire($key, $ttl);
     $pipe->exec();

@@ -24,6 +24,8 @@ env:
     # force composer 1.8+ to use a specific folder as home
     - COMPOSER_HOME="$HOME/.composer/"
 
+    - DRUPAL_TI_DRUSH_VERSION="drush/drush:^9"
+
     # Configuration variables.
     - DRUPAL_TI_MODULE_NAME="redis"
     - DRUPAL_TI_SIMPLETEST_GROUP="redis"

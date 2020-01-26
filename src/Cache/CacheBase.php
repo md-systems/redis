@@ -97,6 +97,13 @@ abstract class CacheBase implements CacheBackendInterface {
   protected $lastDeleteAll = NULL;
 
   /**
+   * Delayed deletions for deletions during a transaction.
+   *
+   * @var string[]
+   */
+  protected $delayedDeletions = [];
+
+  /**
    * Get TTL for CACHE_PERMANENT items.
    *
    * @return int
@@ -142,6 +149,49 @@ abstract class CacheBase implements CacheBackendInterface {
    */
   public function delete($cid) {
     $this->deleteMultiple([$cid]);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function deleteMultiple(array $cids) {
+    $in_transaction = \Drupal::database()->inTransaction();
+    if ($in_transaction) {
+      if (empty($this->delayedDeletions)) {
+        \Drupal::database()->addRootTransactionEndCallback([$this, 'postRootTransactionCommit']);
+      }
+      $this->delayedDeletions = array_unique(array_merge($this->delayedDeletions, $cids));
+    }
+    else {
+      $this->doDeleteMultiple($cids);
+    }
+  }
+
+  /**
+   * Execute the deletion.
+   *
+   * This can be delayed to avoid race conditions.
+   *
+   * @param array $cids
+   *   An array of cache IDs to delete.
+   *
+   * @see static::deleteMultiple()
+   */
+  protected abstract function doDeleteMultiple(array $cids);
+
+  /**
+   * Callback to be invoked after a database transaction gets committed.
+   *
+   * Invalidates all delayed cache deletions.
+   *
+   * @param bool $success
+   *   Whether or not the transaction was successful.
+   */
+  public function postRootTransactionCommit($success) {
+    if ($success) {
+      $this->doDeleteMultiple($this->delayedDeletions);
+    }
+    $this->delayedDeletions = [];
   }
 
   /**
@@ -248,6 +298,11 @@ abstract class CacheBase implements CacheBackendInterface {
   protected function expandEntry(array $values, $allow_invalid) {
     // Check for entry being valid.
     if (empty($values['cid'])) {
+      return FALSE;
+    }
+
+    // Ignore items that are scheduled for deletion.
+    if (in_array($values['cid'], $this->delayedDeletions)) {
       return FALSE;
     }
 

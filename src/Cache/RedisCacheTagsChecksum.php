@@ -3,6 +3,7 @@
 namespace Drupal\redis\Cache;
 
 use Drupal\Core\Cache\CacheTagsChecksumInterface;
+use Drupal\Core\Cache\CacheTagsChecksumTrait;
 use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
 use Drupal\redis\ClientFactory;
 use Drupal\redis\RedisPrefixTrait;
@@ -13,6 +14,7 @@ use Drupal\redis\RedisPrefixTrait;
 class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInvalidatorInterface {
 
   use RedisPrefixTrait;
+  use CacheTagsChecksumTrait;
 
   /**
    * Contains already loaded cache invalidations from the database.
@@ -51,87 +53,36 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
   /**
    * {@inheritdoc}
    */
-  public function invalidateTags(array $tags) {
-    $keys_to_increment = [];
-    foreach ($tags as $tag) {
-      // Only invalidate tags once per request unless they are written again.
-      if (isset($this->invalidatedTags[$tag])) {
-        continue;
+  public function doInvalidateTags(array $tags) {
+    $keys = array_map([$this, 'getTagKey'], $tags);
+
+    // We want to differentiate between PhpRedis and Redis clients.
+    if ($this->clientType === 'PhpRedis') {
+      $multi = $this->client->multi();
+      foreach ($keys as $key) {
+        $multi->incr($key);
       }
-      $this->invalidatedTags[$tag] = TRUE;
-      unset($this->tagCache[$tag]);
-      $keys_to_increment[] = $this->getTagKey($tag);
+      $multi->exec();
     }
-    if ($keys_to_increment) {
+    elseif ($this->clientType === 'Predis') {
 
-      // We want to differentiate between PhpRedis and Redis clients.
-      if ($this->clientType === 'PhpRedis') {
-        $multi = $this->client->multi(\Redis::PIPELINE);
-        foreach ($keys_to_increment as $key) {
-          $multi->incr($key);
-        }
-        $multi->exec();
+      $pipe = $this->client->pipeline();
+      foreach ($keys as $key) {
+        $pipe->incr($key);
       }
-      elseif ($this->clientType === 'Predis') {
-
-        $pipe = $this->client->pipeline();
-        foreach ($keys_to_increment as $key) {
-          $pipe->incr($key);
-        }
-        $pipe->execute();
-      }
+      $pipe->execute();
     }
-
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getCurrentChecksum(array $tags) {
-    // Remove tags that were already invalidated during this request from the
-    // static caches so that another invalidation can occur later in the same
-    // request. Without that, written cache items would not be invalidated
-    // correctly.
-    foreach ($tags as $tag) {
-      unset($this->invalidatedTags[$tag]);
-    }
-    return $this->calculateChecksum($tags);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function isValid($checksum, array $tags) {
-    return $checksum == $this->calculateChecksum($tags);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function calculateChecksum(array $tags) {
-    $checksum = 0;
-
-    $fetch = array_values(array_diff($tags, array_keys($this->tagCache)));
-    if ($fetch) {
-      $keys = array_map([$this, 'getTagKey'], $fetch);
-      foreach ($this->client->mget($keys) as $index => $invalidations) {
-        $this->tagCache[$fetch[$index]] = $invalidations ?: 0;
-      }
-    }
-
-    foreach ($tags as $tag) {
-      $checksum += $this->tagCache[$tag];
-    }
-
-    return $checksum;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function reset() {
-    $this->tagCache = [];
-    $this->invalidatedTags = [];
+  protected function getTagInvalidationCounts(array $tags) {
+    $keys = array_map([$this, 'getTagKey'], $tags);
+    // The mget command returns the values as an array with numeric keys,
+    // combine it with the tags array to get the expected return value and run
+    // it through intval() to convert to integers and FALSE to 0.
+    return array_map('intval', array_combine($tags, $this->client->mget($keys)));
   }
 
   /**
@@ -145,6 +96,15 @@ class RedisCacheTagsChecksum implements CacheTagsChecksumInterface, CacheTagsInv
    */
   protected function getTagKey($tag) {
     return $this->getPrefix() . ':cachetags:' . $tag;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getDatabaseConnection() {
+    // This is not injected to avoid a dependency on the database in the
+    // critical path. It is only needed during cache tag invalidations.
+    return \Drupal::database();
   }
 
 }

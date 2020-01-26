@@ -102,12 +102,11 @@ class Predis extends CacheBase {
   /**
    * {@inheritdoc}
    */
-  public function deleteMultiple(array $cids) {
+  public function doDeleteMultiple(array $cids) {
     if (!empty($cids)) {
       $keys = array_map([$this, 'getKey'], $cids);
       $this->client->del($keys);
     }
   }
-
 
 }

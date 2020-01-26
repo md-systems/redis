@@ -184,9 +184,8 @@ abstract class CacheBase implements CacheBackendInterface {
     if ($expire == Cache::PERMANENT || $expire > $this->permTtl) {
       return $this->permTtl;
     }
-    return $expire - REQUEST_TIME;
+    return $expire - \Drupal::time()->getRequestTime();
   }
-
   /**
    * Return the key for the tag used to specify the bin of cache-entries.
    */
@@ -259,7 +258,7 @@ abstract class CacheBase implements CacheBackendInterface {
     // Check expire time, allow to have a cache invalidated explicitly, don't
     // check if already invalid.
     if ($cache->valid) {
-      $cache->valid = $cache->expire == Cache::PERMANENT || $cache->expire >= REQUEST_TIME;
+      $cache->valid = $cache->expire == Cache::PERMANENT || $cache->expire >= \Drupal::time()->getRequestTime();
 
       // Check if invalidateTags() has been called with any of the items's tags.
       if ($cache->valid && !$this->checksumProvider->isValid($cache->checksum, $cache->tags)) {

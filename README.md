@@ -14,8 +14,8 @@ will need to compile the extension yourself.
 Predis
 ------
 
-Support for the Predis PHP library is experimental, but feel free to try it out. 
-You can install the required library using composer. Check out the README.Predis.txt file 
+Support for the Predis PHP library is experimental, but feel free to try it out.
+You can install the required library using composer. Check out the README.Predis.txt file
 for more information.
 
 Important notice
@@ -83,7 +83,7 @@ Add into your settings.php file:
 
     $settings['redis.connection']['interface'] = 'PhpRedis';
 
-You can replace 'PhpRedis' with 'Predis', depending on the library you chose. 
+You can replace 'PhpRedis' with 'Predis', depending on the library you chose.
 
 
 Tell Drupal to use the cache backend
@@ -94,7 +94,7 @@ file like any other backend:
 
     # Use for all bins otherwise specified.
     $settings['cache']['default'] = 'cache.backend.redis';
-  
+
     # Use this to only use it for specific cache bins.
     $settings['cache']['bins']['render'] = 'cache.backend.redis';
 
@@ -140,6 +140,20 @@ If your Redis instance is remote, you can use this syntax:
     $settings['redis.connection']['port']      = '6379';  // Redis port
 
 Port is optional, default is 6379 (default Redis port).
+
+Compression
+-------------------------
+Compressing the data stored in redis can massively reduce the nedeed storage.
+
+To enable, set the minimal length after which the cached data should be
+compressed:
+
+    $settings['redis_compress_length'] = 100;
+
+By default, compression level 1 is used, which provides considerable storage
+optimization with minimal CPU overhead, to change:
+
+    $settings['redis_compress_level'] = 6;
 
 Using a specific database
 -------------------------
@@ -200,11 +214,11 @@ Here is a complex sample:
 
     // Default behavior for all bins, prefix is 'mysite_'.
     $settings['cache_prefix']['default'] = 'mysite_';
-  
+
     // Set no prefix explicitely for 'cache' and 'cache_bootstrap' bins.
     $settings['cache_prefix']['cache'] = FALSE;
     $settings['cache_prefix']['cache_bootstrap'] = FALSE;
-  
+
     // Set another prefix for 'cache_menu' bin.
     $settings['cache_prefix']['cache_menu'] = 'menumysite_';
 

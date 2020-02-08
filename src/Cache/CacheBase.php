@@ -32,9 +32,9 @@ abstract class CacheBase implements CacheBackendInterface {
   const LIFETIME_PERM_DEFAULT = 31536000;
 
   /**
-   * Computed keys are let's say arround 60 characters length due to
+   * Computed keys are let's say around 60 characters length due to
    * key prefixing, which makes 1,000 keys DEL command to be something
-   * arround 50,000 bytes length: this is huge and may not pass into
+   * around 50,000 bytes length: this is huge and may not pass into
    * Redis, let's split this off.
    * Some recommend to never get higher than 1,500 bytes within the same
    * command which makes us forced to split this at a very low threshold:
@@ -63,7 +63,7 @@ abstract class CacheBase implements CacheBackendInterface {
    * Default TTL for CACHE_PERMANENT items.
    *
    * See "Default lifetime for permanent items" section of README.md
-   * file for a comprehensive explaination of why this exists.
+   * file for a comprehensive explanation of why this exists.
    *
    * @var int
    */

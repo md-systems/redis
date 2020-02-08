@@ -331,6 +331,15 @@ abstract class CacheBase implements CacheBackendInterface {
       return FALSE;
     }
 
+    if (!empty($cache->gz)) {
+      // Uncompress, suppress warnings e.g. for broken CRC32.
+      $cache->data = @gzuncompress($cache->data);
+      // In such cases, void the cache entry.
+      if ($cache->data === FALSE) {
+        return FALSE;
+      }
+    }
+
     if ($cache->serialized) {
       $cache->data = $this->serializer->decode($cache->data);
     }
@@ -370,6 +379,11 @@ abstract class CacheBase implements CacheBackendInterface {
     else {
       $hash['data'] = $data;
       $hash['serialized'] = 0;
+    }
+
+    if (Settings::get('redis_compress_length', 0) && strlen($hash['data']) > Settings::get('redis_compress_length', 0)) {
+      $hash['data'] = @gzcompress($hash['data'], Settings::get('redis_compress_level', -1));
+      $hash['gz'] = TRUE;
     }
 
     return $hash;

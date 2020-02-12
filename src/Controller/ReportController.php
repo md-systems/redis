@@ -262,7 +262,7 @@ class ReportController extends ControllerBase {
     }
     if (count($cache_tags) == 0) {
       $requirements['cache_tag_totals']['severity_status'] = 'warning';
-      $requirements['cache_tag_totals']['description'] = $this->t('No cache tags found, make sure that the redis cache tag checksum service is used.');
+      $requirements['cache_tag_totals']['description'] = $this->t('No cache tags found, make sure that the redis cache tag checksum service is used. See example.services.yml on root of this module.');
       unset($requirements['cache_tags']);
     }
 

@@ -382,7 +382,7 @@ abstract class CacheBase implements CacheBackendInterface {
     }
 
     if (Settings::get('redis_compress_length', 0) && strlen($hash['data']) > Settings::get('redis_compress_length', 0)) {
-      $hash['data'] = @gzcompress($hash['data'], Settings::get('redis_compress_level', -1));
+      $hash['data'] = @gzcompress($hash['data'], Settings::get('redis_compress_level', 1));
       $hash['gz'] = TRUE;
     }
 

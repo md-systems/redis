@@ -63,6 +63,26 @@ or copy the service definitions into a site specific services.yml.
 Note that for any of this, the redis module must be enabled. See next chapters
 for more information.
 
+Setup without Redis Module enable
+---------------------------------
+
+First of all you need to Load the redis files, here is an example to how you can do this. All these configuration you need to include on your settings.php file
+
+    $class_loader->addPsr4('Drupal\\redis\\', DRUPAL_ROOT . '/sites/modules/redis/src');
+
+After that you need to include the example.services.yml file and the redis.services.yml file:
+
+    $settings['container_yamls'][] = 'modules/redis/example.services.yml';
+    $settings['container_yamls'][] = 'modules/redis/redis.services.yml';
+
+Now you can use all the redis settings. For example:
+
+    // Always set the fast backend for bootstrap, discover and config, otherwise
+    // this gets lost when redis is enabled.
+    $settings['cache']['bins']['bootstrap'] = 'cache.backend.chainedfast';
+    $settings['cache']['bins']['discovery'] = 'cache.backend.chainedfast';
+    $settings['cache']['bins']['config'] = 'cache.backend.chainedfast';
+
 Is there any cache bins that should *never* go into Redis?
 ----------------------------------------------------------
 

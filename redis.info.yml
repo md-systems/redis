@@ -4,3 +4,4 @@ package: Performance
 type: module
 core_version_requirement: ^8.8 || ^9
 configure: redis.admin_display
+php: 7.1.0

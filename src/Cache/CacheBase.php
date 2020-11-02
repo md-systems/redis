@@ -2,7 +2,7 @@
 
 namespace Drupal\redis\Cache;
 
-use \DateInterval;
+use DateInterval;
 use Drupal\Component\Assertion\Inspector;
 use Drupal\Component\Serialization\SerializationInterface;
 use Drupal\Core\Cache\Cache;
@@ -221,21 +221,27 @@ abstract class CacheBase implements CacheBackendInterface {
   }
 
   /**
-   * Calculate the correct expiration time.
+   * Calculate the correct ttl value for redis.
    *
    * @param int $expire
    *   The expiration time provided for the cache set.
    *
    * @return int
-   *   The default expiration if expire is PERMANENT or higher than the default.
-   *   May return negative values if the item is already expired.
+   *   The default TTL if expire is PERMANENT or higher than the default.
+   *   Otherwise, the adjusted lifetime of the cache. May return negative values
+   *   if the item is already expired.
    */
   protected function getExpiration($expire) {
-    if ($expire == Cache::PERMANENT || $expire > $this->permTtl) {
+    if ($expire == Cache::PERMANENT) {
       return $this->permTtl;
     }
-    return $expire - \Drupal::time()->getRequestTime();
+    $expire_ttl = $expire - \Drupal::time()->getRequestTime();
+    if ($expire_ttl > $this->permTtl) {
+      return $this->permTtl;
+    }
+    return $expire_ttl;
   }
+
   /**
    * Return the key for the tag used to specify the bin of cache-entries.
    */
@@ -267,7 +273,7 @@ abstract class CacheBase implements CacheBackendInterface {
         else {
           if ($iv = DateInterval::createFromDateString($ttl)) {
             // http://stackoverflow.com/questions/14277611/convert-dateinterval-object-to-seconds-in-php
-            $this->permTtl = ($iv->y * 31536000 + $iv->m * 2592000 + $iv->days * 86400 + $iv->h * 3600 + $iv->i * 60 + $iv->s);
+            $this->permTtl = ($iv->y * 31536000 + $iv->m * 2592000 + $iv->d * 86400 + $iv->h * 3600 + $iv->i * 60 + $iv->s);
           }
           else {
             // Log error about invalid ttl.

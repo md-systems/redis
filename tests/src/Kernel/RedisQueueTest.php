@@ -20,7 +20,7 @@ class RedisQueueTest extends CoreQueueTest {
    *
    * @var array
    */
-  public static $modules = ['redis'];
+  protected static $modules = ['redis'];
 
   /**
    * Tests Redis non-blocking queue.

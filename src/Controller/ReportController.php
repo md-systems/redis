@@ -65,7 +65,7 @@ class ReportController extends ControllerBase {
   public function overview() {
 
     $build['report'] = [
-      '#theme' => 'status_report',
+      '#type' => 'status_report',
       '#requirements' => [],
     ];
 

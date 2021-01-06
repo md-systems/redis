@@ -357,7 +357,7 @@ abstract class CacheBase implements CacheBackendInterface {
    *
    * @return array
    */
-  protected function createEntryHash($cid, $data, $expire = Cache::PERMANENT, array $tags) {
+  protected function createEntryHash($cid, $data, $expire, array $tags) {
     // Always add a cache tag for the current bin, so that we can use that for
     // invalidateAll().
     $tags[] = $this->getTagForBin();

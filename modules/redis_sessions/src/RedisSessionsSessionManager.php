@@ -88,7 +88,10 @@ class RedisSessionsSessionManager extends SessionManager {
     else {
       // If no save_path from settings.php, use Redis module's settings.
       $settings = Settings::get('redis.connection');
-      $save_path = "tcp://${settings['host']}:6379";
+      $settings += [
+        'port' => '6379',
+      ];
+      $save_path = "tcp://${settings['host']}:${settings['port']}";
     }
 
     return $save_path;

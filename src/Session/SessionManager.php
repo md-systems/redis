@@ -6,7 +6,9 @@ use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Session\MetadataBag;
 use Drupal\Core\Session\SessionConfigurationInterface;
 use Drupal\Core\Session\SessionManager as CoreSessionManager;
+use Drupal\Core\Site\Settings;
 use Drupal\redis\ClientFactory;
+use Predis\Session\Handler;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBagInterface;
 
@@ -44,7 +46,7 @@ class SessionManager extends CoreSessionManager {
       ini_set('session.save_handler', 'redis');
     }
     elseif ($this->clientFactory->getClientName() == 'Predis') {
-      $handler = new \Predis\Session\Handler($this->redis, array('gc_maxlifetime' => 5));
+      $handler = new Handler($this->redis, array('gc_maxlifetime' => 5));
       $handler->register();
     }
   }
@@ -60,13 +62,13 @@ class SessionManager extends CoreSessionManager {
    */
   private function getSavePath() {
     // Use the save_path value from settings.php first.
-    $settings = \Drupal\Core\Site\Settings::get('redis_sessions');
+    $settings = Settings::get('redis_sessions');
     if ($settings['save_path']) {
       $save_path = $settings['save_path'];
     }
     else {
       // If no save_path from settings.php, use Redis module's settings.
-      $settings = \Drupal\Core\Site\Settings::get('redis.connection');
+      $settings = Settings::get('redis.connection');
       $settings += [
         'port' => '6379',
       ];
@@ -83,7 +85,7 @@ class SessionManager extends CoreSessionManager {
    *   A string of the redis key prefix, with a trailing colon.
    */
   private function getNativeSessionKey($suffix = '') {
-    // TODO: Get the string from a config option, or use the default string.
+    // @todo Get the string from a config option, or use the default string.
     return 'PHPREDIS_SESSION:' . $suffix;
   }
 
@@ -104,8 +106,8 @@ class SessionManager extends CoreSessionManager {
    *   A string of the redis key prefix, with a trailing colon.
    */
   private function getUidSessionKeyPrefix($suffix = '') {
-    // TODO: Get Redis module prefix value to add to the $sid Redis key prefix.
-    // TODO: Get the string from a config option, or use the default string.
+    // @todo Get Redis module prefix value to add to the $sid Redis key prefix.
+    // @todo Get the string from a config option, or use the default string.
     return 'DRUPAL_REDIS_SESSION:' . $suffix;
   }
 
@@ -131,7 +133,8 @@ class SessionManager extends CoreSessionManager {
    */
   private function getSessionBagUid() {
     foreach ($this->bags as $bag) {
-      // In Drupal 8.5 and above, the bag may be a proxy, in which case we need to get the actual bag.
+      // In Drupal 8.5 and above, the bag may be a proxy, in which case we need
+      // to get the actual bag.
       if (method_exists($bag, 'getBag')) {
         $bag = $bag->getBag();
       }
@@ -183,8 +186,8 @@ class SessionManager extends CoreSessionManager {
     // NOTE: Checking for $uid here ensures that only sessions for logged-in
     // users will have lookup keys. Anonymous sessions (if they exist at all)
     // are transient and will be cleaned up via garbage collection.
-    // TODO: Add EX Seconds to the set() method for session life length.
-    // TODO: After adding EX and PX seconds, add 'NX'.
+    // @todo Add EX Seconds to the set() method for session life length.
+    // @todo After adding EX and PX seconds, add 'NX'.
     // See: https://redis.io/commands/set.
     if ($this->getSessionBagUid()) {
       if (\Drupal::currentUser()->id()) {

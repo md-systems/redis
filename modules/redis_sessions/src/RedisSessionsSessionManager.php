@@ -1,14 +1,10 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\redis_sessions\RedisSessionsSessionManager.
- */
-
 namespace Drupal\redis_sessions;
 
 use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Database\Connection;
+use Drupal\Core\Site\Settings;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Core\Session\SessionManager;
 use Drupal\Core\Session\MetadataBag;
@@ -85,13 +81,13 @@ class RedisSessionsSessionManager extends SessionManager {
    */
   private function getSavePath() {
     // Use the save_path value from settings.php first.
-    $settings = \Drupal\Core\Site\Settings::get('redis_sessions');
+    $settings = Settings::get('redis_sessions');
     if ($settings['save_path']) {
       $save_path = $settings['save_path'];
     }
     else {
       // If no save_path from settings.php, use Redis module's settings.
-      $settings = \Drupal\Core\Site\Settings::get('redis.connection');
+      $settings = Settings::get('redis.connection');
       $save_path = "tcp://${settings['host']}:6379";
     }
 
@@ -105,7 +101,7 @@ class RedisSessionsSessionManager extends SessionManager {
    *   A string of the redis key prefix, with a trailing colon.
    */
   private function getNativeSessionKey($suffix = '') {
-    // TODO: Get the string from a config option, or use the default string.
+    // @todo Get the string from a config option, or use the default string.
     return 'PHPREDIS_SESSION:' . $suffix;
   }
 
@@ -126,8 +122,8 @@ class RedisSessionsSessionManager extends SessionManager {
    *   A string of the redis key prefix, with a trailing colon.
    */
   private function getUidSessionKeyPrefix($suffix = '') {
-    // TODO: Get Redis module prefix value to add to the $sid Redis key prefix.
-    // TODO: Get the string from a config option, or use the default string.
+    // @todo Get Redis module prefix value to add to the $sid Redis key prefix.
+    // @todo Get the string from a config option, or use the default string.
     return 'DRUPAL_REDIS_SESSION:' . $suffix;
   }
 
@@ -187,8 +183,8 @@ class RedisSessionsSessionManager extends SessionManager {
     // NOTE: Checking for $uid here ensures that only sessions for logged-in
     // users will have lookup keys. Anonymous sessions (if they exist at all)
     // are transient and will be cleaned up via garbage collection.
-    // TODO: Add EX Seconds to the set() method for session life length.
-    // TODO: After adding EX and PX seconds, add 'NX'.
+    // @todo Add EX Seconds to the set() method for session life length.
+    // @todo After adding EX and PX seconds, add 'NX'.
     // See: https://redis.io/commands/set.
     if ($uid) {
       if (\Drupal::currentUser()->id()) {

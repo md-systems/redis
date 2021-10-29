@@ -1,0 +1,8 @@
+services:
+
+  # Decorate the core session_manager service to use our extended class.
+  redis_sessions.session_manager:
+    class: Drupal\redis_sessions\RedisSessionsSessionManager
+    decorates: session_manager
+    decoration_priority: -10
+    arguments: ['@redis_sessions.session_manager.inner', '@request_stack', '@database', '@session_manager.metadata_bag', '@session_configuration', '@session_handler']

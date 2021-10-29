@@ -31,3 +31,10 @@ services:
   flood:
     class: Drupal\Core\Flood\FloodInterface
     factory: ['@redis.flood.factory', get]
+
+  # Replaces the session manager with a redis implementation.
+  session_manager:
+    class: Drupal\redis\Session\SessionManager
+    arguments: ['@request_stack', '@redis.factory', '@session_manager.metadata_bag', '@session_configuration', '@session_handler']
+    calls:
+      - [setWriteSafeHandler, ['@session_handler.write_safe']]

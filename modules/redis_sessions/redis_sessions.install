@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @file
+ * Redis install related functions.
+ */
+
+use \Drupal\redis\ClientFactory;
+
+/**
+ * Implements hook_requirements().
+ */
+function redis_sessions_requirements($phase) {
+
+  // This module is configured via settings.php file. Using any other phase
+  // than runtime to proceed to some consistency checks is useless.
+  if ('runtime' !== $phase) {
+    return array();
+  }
+
+  $requirements = array();
+
+  if (ClientFactory::hasClient()) {
+    $requirements['redis_sessions_redis'] = array(
+      'title'       => "Redis Sessions",
+      'value'       => t("Connected, using the <em>@name</em> client.", array('@name' => ClientFactory::getClientName())),
+      'severity'    => REQUIREMENT_OK,
+    );
+  }
+  else {
+    $requirements['redis_sessions_redis'] = array(
+      'title'       => "Redis Sessions",
+      'value'       => t("Not connected."),
+      'severity'    => REQUIREMENT_WARNING,
+      'description' => t("No Redis client connected, this module is useless thereof. Ensure that you enabled module using it or disable it."),
+    );
+  }
+
+  $settings = \Drupal\Core\Site\Settings::get('redis_sessions');
+  if (empty($settings['save_path'])) {
+    $requirements['redis_sessions_save_path'] = array(
+      'title'       => "Redis Sessions",
+      'value'       => t("Redis Sessions has not been configured with a save_path setting. See the CONFIGURATION section of this module's README.md."),
+      'severity'    => REQUIREMENT_OK,
+    );
+  }
+
+  return $requirements;
+}

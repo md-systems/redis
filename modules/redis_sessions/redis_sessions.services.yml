@@ -1,14 +1,16 @@
 services:
-
-  # Decorate the core session_manager service to use our extended class.
+  # Replaces the session manager with a redis implementation.
   redis_sessions.session_manager:
-    class: Drupal\redis_sessions\RedisSessionsSessionManager
+    class: Drupal\redis_sessions\Session\SessionManager
     decorates: session_manager
     decoration_priority: -10
-    arguments: 
-      - '@redis_sessions.session_manager.inner'
-      - '@request_stack'
-      - '@database'
-      - '@session_manager.metadata_bag'
-      - '@session_configuration'
+    arguments:
+      - '@request_stack',
+      - '@database',
+      - '@session_manager.metadata_bag',
+      - '@session_configuration',
+      - '@redis.factory',
+      - '@current_user',
       - '@session_handler'
+    calls:
+      - [setWriteSafeHandler, ['@session_handler.write_safe']]

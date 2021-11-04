@@ -1,11 +1,13 @@
 <?php
 
-namespace Drupal\redis\Session;
+namespace Drupal\redis_sessions\Session;
 
 use Drupal\Component\Utility\Crypt;
+use Drupal\Core\Database\Connection;
+use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\Session\MetadataBag;
 use Drupal\Core\Session\SessionConfigurationInterface;
-use Drupal\Core\Session\SessionManager as CoreSessionManager;
+use Drupal\Core\Session\SessionManager;
 use Drupal\Core\Site\Settings;
 use Drupal\redis\ClientFactory;
 use Predis\Session\Handler;
@@ -15,12 +17,21 @@ use Symfony\Component\HttpFoundation\Session\Attribute\AttributeBagInterface;
 /**
  * Manages user sessions in redis.
  */
-class SessionManager extends CoreSessionManager {
+class RedisSessionsSessionManager extends SessionManager {
 
   /**
+   * The client factory.
+   *
    * @var \Drupal\redis\ClientInterface
    */
   protected $clientFactory;
+
+  /**
+   * The current user.
+   *
+   * @var \Drupal\Core\Session\AccountProxyInterface
+   */
+  protected $currentUser;
 
   /**
    * The Redis client.
@@ -30,16 +41,37 @@ class SessionManager extends CoreSessionManager {
   protected $redis;
 
   /**
-   * {@inheritdoc}
+   * Constructor.
    *
-   * @param ClientFactory $clientFactory
-   *
-   * @throws \Exception
+   * @param \Symfony\Component\HttpFoundation\RequestStack $request_stack
+   *   The request stack.
+   * @param \Drupal\Core\Database\Connection $connection
+   *   The database connection.
+   * @param \Drupal\Core\Session\MetadataBag $metadata_bag
+   *   The session metadata bag.
+   * @param \Drupal\Core\Session\SessionConfigurationInterface $session_configuration
+   *   The session configuration interface.
+   * @param \Drupal\redis\ClientFactory $client_factory
+   *   The client factory.
+   * @param \Drupal\Core\Session\AccountProxyInterface $current_user
+   *   The current user.
+   * @param \Symfony\Component\HttpFoundation\Session\Storage\Proxy\AbstractProxy|Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeSessionHandler|\SessionHandlerInterface|null $handler
+   *   The object to register as a PHP session handler.
+   *   @see \Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage::setSaveHandler()
    */
-  public function __construct(RequestStack $request_stack, ClientFactory $clientFactory, MetadataBag $metadata_bag, SessionConfigurationInterface $session_configuration, $handler = NULL) {
-    parent::__construct($request_stack, \Drupal::database(), $metadata_bag, $session_configuration, $handler);
+  public function __construct(
+    RequestStack $request_stack,
+    Connection $connection,
+    MetadataBag $metadata_bag,
+    SessionConfigurationInterface $session_configuration,
+    ClientFactory $client_factory,
+    AccountProxyInterface $current_user,
+    $handler = NULL
+  ) {
+    parent::__construct($request_stack, $connection, $metadata_bag, $session_configuration, $handler);
 
-    $this->clientFactory = $clientFactory;
+    $this->clientFactory = $client_factory;
+    $this->currentUser = $current_user;
     $this->redis = $this->clientFactory->getClient();
     if ($this->clientFactory->getClientName() == 'PhpRedis') {
       ini_set('session.save_path', $this->getSavePath());
@@ -148,9 +180,9 @@ class SessionManager extends CoreSessionManager {
   /**
    * {@inheritdoc}
    */
-  public function isSessionObsolete() {
+  protected function isSessionObsolete() {
     $bag_uid = $this->getSessionBagUid();
-    $current_uid = \Drupal::currentUser()->id();
+    $current_uid = $this->currentUser->id();
     return ($bag_uid == 0 && $current_uid == 0);
   }
 
@@ -158,29 +190,7 @@ class SessionManager extends CoreSessionManager {
    * {@inheritdoc}
    */
   public function save() {
-    if ($this->isCli()) {
-      // We don't have anything to do if we are not allowed to save the session.
-      return;
-    }
-
-    if ($this->isSessionObsolete()) {
-      // There is no session data to store, destroy the session if it was
-      // previously started.
-      if ($this->getSaveHandler()->isActive()) {
-        $this->destroy();
-      }
-    }
-    else {
-      // There is session data to store. Start the session if it is not already
-      // started.
-      if (!$this->getSaveHandler()->isActive()) {
-        $this->startNow();
-      }
-      // Write the session data.
-      parent::save();
-    }
-
-    $this->startedLazy = FALSE;
+    parent::save();
 
     // Write a key:value pair to be able to find the UID by the SID later.
     // NOTE: Checking for $uid here ensures that only sessions for logged-in
@@ -190,7 +200,7 @@ class SessionManager extends CoreSessionManager {
     // @todo After adding EX and PX seconds, add 'NX'.
     // See: https://redis.io/commands/set.
     if ($this->getSessionBagUid()) {
-      if (\Drupal::currentUser()->id()) {
+      if ($this->currentUser->id()) {
         $this->redis->set($this->getUidSessionKey(), $this->getKey());
       }
       else {
@@ -203,7 +213,6 @@ class SessionManager extends CoreSessionManager {
    * {@inheritdoc}
    */
   public function delete($uid) {
-    // Nothing to do if we are not allowed to change the session.
     if ($this->isCli()) {
       return;
     }
@@ -220,11 +229,17 @@ class SessionManager extends CoreSessionManager {
    * {@inheritdoc}
    */
   public function destroy() {
+    parent::destroy();
+
+    if ($this->isCli()) {
+      return;
+    }
+
     $uid = $this->getSessionBagUid();
-    $this->redis->del("SESS_DESTROY:$uid:" . \Drupal::currentUser()->id());
+    $this->redis->del("SESS_DESTROY:$uid:" . $this->currentUser->id());
 
     if ($uid) {
-      if (\Drupal::currentUser()->id() == 0) {
+      if ($this->currentUser->id() == 0) {
         $sid = $this->redis->get($this->getUidSessionKey());
 
         $this->redis->del($sid);
@@ -232,8 +247,6 @@ class SessionManager extends CoreSessionManager {
         $this->redis->del($this->getKey());
       }
     }
-
-    parent::destroy();
   }
 
   /**
@@ -242,7 +255,7 @@ class SessionManager extends CoreSessionManager {
    * @param string $old_session_id
    *   The old session ID.
    */
-  public function destroyObsolete($old_session_id) {
+  protected function destroyObsolete($old_session_id) {
     $this->redis->del($old_session_id);
     $this->redis->del($this->getUidSessionKey());
   }

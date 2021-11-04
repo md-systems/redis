@@ -9,8 +9,9 @@ CONTENTS OF THIS FILE
 
 INTRODUCTION
 ------------
+
 The Redis Sessions module creates an alternative to database storage for user
-sessions. It uses native a PHP Redis sessions manager and custom settings to
+sessions. It uses a PHP Redis sessions manager and custom settings to
 use Redis for sessions handling and storage.
 
 
@@ -28,7 +29,6 @@ INSTALLATION
  * Install as you would normally install a contributed Drupal module. See:
    https://www.drupal.org/docs/8/extending-drupal-8/installing-modules
    for further information.
-
 
 
 CONFIGURATION

@@ -22,8 +22,8 @@ function redis_sessions_requirements($phase) {
 
   if (ClientFactory::hasClient()) {
     $requirements['redis_sessions_redis'] = [
-      'title' => "Redis Sessions",
-      'value' => t("Connected, using the <em>@name</em> client.", [
+      'title' => 'Redis Sessions',
+      'value' => t('Connected, using the <em>@name</em> client.', [
         '@name' => ClientFactory::getClientName(),
       ]),
       'severity' => REQUIREMENT_OK,
@@ -31,17 +31,18 @@ function redis_sessions_requirements($phase) {
   }
   else {
     $requirements['redis_sessions_redis'] = [
-      'title' => "Redis Sessions",
-      'value' => t("Not connected."),
+      'title' => 'Redis Sessions',
+      'value' => t('Not connected.'),
       'severity' => REQUIREMENT_WARNING,
-      'description' => t("No Redis client connected, this module is useless thereof. Ensure that you enabled module using it or disable it."),
+      'description' => t('No Redis client connected, this module is useless thereof. Ensure that you enabled module using it or disable it.'),
     ];
   }
 
-  $settings = Settings::get('redis_sessions');
-  if (empty($settings['save_path'])) {
+  /** @var array $settings */
+  $settings = Settings::get('redis_sessions', []);
+  if (!isset($settings['save_path']) || empty($settings['save_path'])) {
     $requirements['redis_sessions_save_path'] = [
-      'title' => "Redis Sessions",
+      'title' => 'Redis Sessions',
       'value' => t("Redis Sessions has not been configured with a save_path setting. See the CONFIGURATION section of this module's README.md."),
       'severity' => REQUIREMENT_OK,
     ];

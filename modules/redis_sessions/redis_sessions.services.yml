@@ -5,12 +5,12 @@ services:
     decorates: session_manager
     decoration_priority: -10
     arguments:
-      - '@request_stack',
-      - '@database',
-      - '@session_manager.metadata_bag',
-      - '@session_configuration',
-      - '@redis.factory',
-      - '@current_user',
+      - '@request_stack'
+      - '@database'
+      - '@session_manager.metadata_bag'
+      - '@session_configuration'
+      - '@redis.factory'
+      - '@current_user'
       - '@session_handler'
     calls:
       - [setWriteSafeHandler, ['@session_handler.write_safe']]

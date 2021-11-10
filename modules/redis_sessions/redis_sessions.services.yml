@@ -1,16 +1,4 @@
 services:
-  # Replaces the session manager with a redis implementation.
-  redis_sessions.session_manager:
-    class: Drupal\redis_sessions\Session\SessionManager
-    decorates: session_manager
-    decoration_priority: -10
-    arguments:
-      - '@request_stack'
-      - '@database'
-      - '@session_manager.metadata_bag'
-      - '@session_configuration'
-      - '@redis.factory'
-      - '@current_user'
-      - '@session_handler'
-    calls:
-      - [setWriteSafeHandler, ['@session_handler.write_safe']]
+  redis_sessions.session_handler.factory:
+    class: Drupal\redis_sessions\Session\SessionHandlerFactory
+    arguments: ['@redis.factory']

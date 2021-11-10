@@ -1,6 +1,6 @@
 CONTENTS OF THIS FILE
 ---------------------
-   
+
  * Introduction
  * Requirements
  * Installation
@@ -25,7 +25,7 @@ This module requires the following modules:
 
 INSTALLATION
 ------------
- 
+
  * Install as you would normally install a contributed Drupal module. See:
    https://www.drupal.org/docs/8/extending-drupal-8/installing-modules
    for further information.
@@ -34,11 +34,8 @@ INSTALLATION
 CONFIGURATION
 -------------
 
- * By default, Redis Sessions will attempt to use the redis.connection host.
- * OPTIONAL: You can add the save_path to your settings.php file, especially if
-   you want to use a different Redis service than what is used for cache.
-    ```
-    $settings['redis_sessions'] = [
-      'save_path' => 'tcp://redis:6379',
-    ];
-    ```
+Either include the default example.services.yml from the module, which will
+replace all supported backend services (check the file for the current list)
+or copy the service definitions into a site specific services.yml.
+
+    $settings['container_yamls'][] = 'modules/redis/modules/redis_sessions/example.services.yml';

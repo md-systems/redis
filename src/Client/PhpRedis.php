@@ -14,7 +14,7 @@ class PhpRedis implements ClientInterface {
   /**
    * {@inheritdoc}
    */
-  public function getClient($host = NULL, $port = NULL, $base = NULL, $password = NULL) {
+  public function getClient($host = NULL, $port = NULL, $base = NULL, $password = NULL, $replicationHosts = [], $persistent = FALSE) {
     $client = new \Redis();
 
     // Sentinel mode, get the real master.
@@ -25,7 +25,12 @@ class PhpRedis implements ClientInterface {
       }
     }
 
-    $client->connect($host, $port);
+    if ($persistent) {
+      $client->pconnect($host, $port);
+    }
+    else {
+      $client->connect($host, $port);
+    }
 
     if (isset($password)) {
       $client->auth($password);

@@ -32,7 +32,7 @@ function redis_requirements($phase) {
       'title'       => "Redis",
       'value'       => t("Not connected."),
       'severity'    => REQUIREMENT_WARNING,
-      'description' => t("No Redis client connected, this module is useless thereof. Ensure that you enabled module using it or disable it."),
+      'description' => t("No Redis client connected, this module is therefore not used. Ensure that Redis is configured correctly, or disable this module."),
     ];
   }
 

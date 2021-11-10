@@ -1,0 +1,4 @@
+services:
+  redis_sessions.session_handler.factory:
+    class: Drupal\redis_sessions\Session\SessionHandlerFactory
+    arguments: ['@redis.factory']

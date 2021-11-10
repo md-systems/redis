@@ -65,7 +65,7 @@ class ReportController extends ControllerBase {
   public function overview() {
 
     $build['report'] = [
-      '#theme' => 'status_report',
+      '#type' => 'status_report',
       '#requirements' => [],
     ];
 
@@ -171,9 +171,9 @@ class ReportController extends ControllerBase {
 
     if ($memory_config['maxmemory']) {
       $memory_value = $this->t('@used_memory / @max_memory (@used_percentage%), maxmemory policy: @policy', [
-        '@used_memory' => $info['used_memory_human'],
+        '@used_memory' => $info['used_memory_human'] ?? $info['Memory']['used_memory_human'],
         '@max_memory' => format_size($memory_config['maxmemory']),
-        '@used_percentage' => (int) ($info['used_memory'] / $memory_config['maxmemory'] * 100),
+        '@used_percentage' => (int) ($info['used_memory'] ?? $info['Memory']['used_memory'] / $memory_config['maxmemory'] * 100),
         '@policy' => $memory_config['maxmemory-policy'],
       ]);
     }

@@ -1,6 +1,7 @@
-name: Redis
-description: Provide a module placeholder, for using as dependency for module that needs Redis.
-package: Performance
+name: "Redis"
+description: "Provide a module placeholder, for using as dependency for module that needs Redis."
+package: "Performance"
 type: module
 core_version_requirement: ^8.8 || ^9
 configure: redis.admin_display
+php: 7.1.0

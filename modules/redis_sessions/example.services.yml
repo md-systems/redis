@@ -1,0 +1,14 @@
+# This file contains example services overrides.
+#
+# Enable with this line in settings.php
+#   $settings['container_yamls'][] = 'modules/redis/modules/redis_sessions/example.services.yml';
+#
+# Or copy & paste the desired services into sites/default/services.yml.
+#
+# Note that the redis module must be enabled for this to work.
+
+services:
+  # Replaces the default session handler storage with a redis implementation.
+  session_handler.storage:
+    class: SessionHandlerInterface
+    factory: ['@redis_sessions.session_handler.factory', get]
